@@ -1,24 +1,28 @@
-use serde::{Serialize, Deserialize};
-use std::collections::HashMap;
+//! Memento持久化模块。
+//! 供Workspace调用。
 
-#[derive(Serialize, Deserialize, Debug)]
+use std::{collections::HashMap, fs, path::Path};
+use serde::{Serialize, Deserialize};
+use crate::error::AppResult;
+
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct FileFlags { pub modified: bool, pub logging: bool }
+
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct WorkspaceMemento {
     pub open_files: HashMap<String, FileFlags>,
-    pub active: Option<String>
+    pub active: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct FileFlags {
-    pub modified: bool,
-    pub logging: bool
-}
+impl WorkspaceMemento {
+    pub fn save(&self, path: &Path) -> AppResult<()> {
+        let data = serde_json::to_string_pretty(self)?;
+        fs::write(path, data)?;
+        Ok(())
+    }
 
-pub fn save_workspace(m: &WorkspaceMemento) -> std::io::Result<()> {
-    let s = serde_json::to_string_pretty(m).unwrap();
-    std::fs::write(".editor_workspace", s)
-}
-
-pub fn load_workspace() -> Option<WorkspaceMemento> {
-    let s = std::fs::read_to_string(".editor_workspace").ok()?;
-    serde_json::from_str(&s).ok()
+    pub fn load(path: &Path) -> AppResult<Self> {
+        let s = fs::read_to_string(path)?;
+        Ok(serde_json::from_str(&s)?)
+    }
 }

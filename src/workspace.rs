@@ -1,108 +1,167 @@
-use std::{collections::HashMap, io, path::{Path, PathBuf}};
-use crate::editor::Editor;
-use crate::persist::{WorkspaceMemento, FileFlags};
+//! 工作区
+//! 管理多文件上下文、状态持久化。
 
+use std::{
+    collections::HashMap, 
+    fs, 
+    io,
+    path::{Path, PathBuf}
+};
+use crate::{
+    editor::Editor,
+    persist::{WorkspaceMemento, FileFlags}, 
+    error::{AppResult, AppError}
+};
+
+
+#[derive(Default)]
 pub struct Workspace {
     editors: HashMap<PathBuf, Editor>,
     active: Option<PathBuf>
 }
 
 impl Workspace {
-    pub fn new() -> Self {
-        Self {
-            editors: HashMap::new(),
-            active: None
-        }
-    }
+    // 用AsRef<Path>，调用方可传入多种类型。
+    pub fn open(&mut self, i_path: impl AsRef<Path>) -> AppResult<()> {
+        let path = i_path.as_ref();
+        let key: PathBuf = path.to_path_buf();
 
-    pub fn init_file(&mut self, p: impl AsRef<Path>, with_log: bool) -> io::Result<&mut Editor> {
-        let p = p.as_ref().to_path_buf();
-        let mut ed = Editor::new_empty();
-        ed.init_file(p.clone(), with_log)?;
-        self.editors.insert(p.clone(), ed);
-        self.active = Some(p.clone());
-        Ok(self.editors.get_mut(&p).unwrap())
-    }
-
-    pub fn load_file(&mut self, p: impl AsRef<Path>) -> io::Result<&mut Editor> {
-        let p = p.as_ref().to_path_buf();
-        if !self.editors.contains_key(&p) {
-            let mut ed = Editor::new_empty();
-            ed.load_file(p.clone())?;
-            self.editors.insert(p.clone(), ed);
-        }
-        self.active = Some(p.clone());
-        Ok(self.editors.get_mut(&p).unwrap())
-    }
-
-    /* 
-    need to use std::path::fs
-    pub fn save(&mut self, p: Option<&Path>) -> io::Result<()> {
-        let targets: Vec<PathBuf> = if let Some(one) = p {
-            // 指定路径，只保存目标路径文件
-            vec![one.to_path_buf()] 
-        } else {
-            // 不指定路径，将所有editor路径文件保存。
-            self.editors.keys().cloned().collect()
+        let content = match fs::read_to_string(path) {
+            Ok(s) => s,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => String::new(),
+            Err(e) => return Err(AppError::Io(e)),
         };
-        for f in targets {
-            if let Some(ed) = self.editors.get_mut(&f) {
-                ed.save(None)?;
-            }
+
+        // 如果已存在，直接读取；否则新建一个editor
+        let ed = self
+            .editors
+            .entry(key.clone())
+            // or_insert_with():需要一个显式闭包或者函数作传入值。
+            .or_insert_with(Editor::new);
+
+        ed.load_from(&content);
+        self.active = Some(key);
+        Ok(())
+    }
+
+    pub fn append(&mut self, text: &str) -> AppResult<()> {
+        let active = self
+            .active
+            .clone()
+            .ok_or_else(|| AppError::InvalidArgs("no active file".into()))?;
+
+        let ed = self
+            .editors
+            .get_mut(&active)
+            .ok_or_else(|| AppError::InvalidArgs("couldn't open active file".into()))?;
+        
+        // 无返回值。
+        ed.append(text);
+        Ok(())
+    }
+
+    pub fn show(&self, start: Option<usize>, end: Option<usize>) -> AppResult<String> {
+        let active = self
+            .active
+            .clone()
+            .ok_or_else(|| AppError::InvalidArgs("no active file".into()))?;
+
+        let ed = self
+            .editors
+            .get(&active)
+            .ok_or_else(|| AppError::InvalidArgs("couldn't open active file".into()))?;
+
+        let n = ed.count_lines();
+        if n == 0 {
+            return Ok("<empty>".to_string());
+        }
+        let s = start.unwrap_or(1).clamp(1, n);
+        let e = end.unwrap_or(n).clamp(1,n);
+        if e < s {
+            return Err(AppError::InvalidArgs(format!("invalid range: {}..{}", s, e)));
+        }
+        Ok(ed.show(s, e))
+    }
+
+    pub fn save_file(&self, path: impl AsRef<Path>) -> AppResult<()> {
+        let p = path.as_ref();
+        let key: PathBuf = p.to_path_buf();
+
+        let ed = self
+            .editors
+            .get(&key)
+            .ok_or_else(|| AppError::InvalidArgs("no such path".into()))?;
+
+        self.save_editor_to(p, &ed)?;
+        Ok(())
+    }
+
+    pub fn save_all(&self) -> AppResult<()> {
+        for (p, ed) in &self.editors {
+            self.save_editor_to(p, &ed)?;
         }
         Ok(())
     }
-    */
 
-    pub fn active_editor_mut(&mut self) -> anyhow::Result<&mut Editor> {
-        let p = self.active.clone().ok_or_else(|| anyhow::anyhow!("无活动文件"))?;
-        self.editors.get_mut(&p).ok_or_else(|| anyhow::anyhow!("内部错误：活动文件不存在"))
+    pub fn active_file_path(&self) -> Option<PathBuf> {
+        self.active.clone()
     }
 
-    pub fn list_editors(&self) -> Vec<String> {
-        let mut out = vec![];
-        for (p, ed) in &self.editors {
-            let starred = if Some(p) == self.active.as_ref() { "*" } else { " " };
-            let modified = if ed.modified() { " [modified]" } else { "" };
-            out.push(format!("{starred} {}{modified}", p.display()));
+    pub fn from_memento(&mut self, m: WorkspaceMemento) -> AppResult<()> {
+        self.editors.clear();
+        self.active = None;
+
+        for (path_str, flags) in m.open_files {
+            let path = PathBuf::from(&path_str);
+            let content = match fs::read_to_string(&path) {
+                Ok(s) => s,
+                Err(e) if e.kind() == io::ErrorKind::NotFound => String::new(),
+                Err(e) => return Err(AppError::Io(e)),
+            };
+
+            let mut editor = Editor::new();
+            editor.load_from(&content);
+            editor.set_modified(flags.modified);
+            editor.set_logging(flags.logging);
+
+            self.editors.insert(path, editor);
         }
-        out
+
+        if let Some(active_str) = m.active {
+            let active_path = PathBuf::from(&active_str);
+            if self.editors.contains_key(&active_path) {
+                self.active = Some(active_path);
+            }
+        }
+
+        Ok(())
     }
 
     pub fn to_memento(&self) -> WorkspaceMemento {
-        let mut map = HashMap::new();
-        for (p, ed) in &self.editors {
-            map.insert(
-                p.display().to_string(),
-                FileFlags{
-                    modified: ed.modified(),
-                    logging: ed.logging_enabled()
-                }
+        let mut open_files = HashMap::new();
+        for (p, e) in &self.editors {
+            open_files.insert(
+                // to_string_lossy(): 以有损方式生成UTF-8文本。
+                p.to_string_lossy().into_owned(),
+                FileFlags {
+                    modified: e.is_modified(),
+                    logging: e.logging_enabled(),
+                },
             );
         }
-        WorkspaceMemento { 
-            open_files: map, 
-            active: self.active.as_ref().map(|p| p.display().to_string())
+        WorkspaceMemento {
+            open_files,
+            active: self
+                .active
+                .as_ref()
+                .map(|p| p.to_string_lossy().into_owned()),
         }
     }
 
-    pub fn from_memento(&mut self, m: &WorkspaceMemento) {
-        self.editors.clear();
-        self.active = None;
-        for (path, flags) in &m.open_files {
-            let p = PathBuf::from(path);
-            let mut ed = Editor::new_empty();
-            // let _ 代表只执行函数，忽略返回值。
-            let _ = ed.load_file(p.clone());
-            ed.set_modified(flags.modified);
-            ed.set_logging(flags.logging);
-            self.editors.insert(p.clone(), ed);
-        }
-        if let Some(a) = &m.active {
-            let p = PathBuf::from(a);
-            if self.editors.contains_key(&p) {
-                self.active = Some(p);
-            }
-        }
+    fn save_editor_to(&self, p: impl AsRef<Path>, ed: &Editor) -> AppResult<()>{
+        let path = p.as_ref();
+        let content = ed.show(1, ed.count_lines());
+        fs::write(path, content)?;
+        Ok(())
     }
 }
