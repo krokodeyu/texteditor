@@ -118,11 +118,15 @@
 
 > 评分构成：架构 15 + 测试 15 + 命令实现 60 + 代码质量 10。
 
-- **M1（基础通路）**：完成 `load/save/init/append/show` 与最小日志读取；落地 `.editor_workspace` 的读写骨架。
+- **M1（基础通路）**：
+  
+  完成`load/save/init/append/show/undo/redo` 与最小日志读取；落地 `.editor_workspace` 的读写骨架。编写测试。
 
-- **M2（文本四件套）**：插入/删除/替换的边界与错误；加 `edit/editor-list/close`。
+- **M2（文本四件套）**：
 
-- **M3（工作区完善）**：`dir-tree/undo/redo/exit`（退出前保存与提示）。
+- 插入/删除/替换的边界与错误；加 `edit/editor-list/close`。
+
+- **M3（工作区完善）**：`dir-tree/exit`（退出前保存与提示）。
 
 - **M4（日志命令）**：`log-on/log-off/log-show` 与会话头写入。
 

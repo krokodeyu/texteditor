@@ -8,9 +8,7 @@ use std::{
     path::{Path, PathBuf}
 };
 use crate::{
-    editor::Editor,
-    persist::{WorkspaceMemento, FileFlags}, 
-    error::{AppResult, AppError}
+    commands::doc_command::DocCommand, editor::Editor, error::{AppError, AppResult}, persist::{FileFlags, WorkspaceMemento}
 };
 
 
@@ -21,6 +19,21 @@ pub struct Workspace {
 }
 
 impl Workspace {
+    pub fn exec_doc(&mut self, cmd: Box<dyn DocCommand>) -> AppResult<()> {
+        let ed = self.get_active_editor_mut()?;
+        ed.exec_doc(cmd)
+    }
+
+    pub fn undo(&mut self) -> AppResult<()> {
+        let ed = self.get_active_editor_mut()?;
+        ed.undo()
+    }
+
+    pub fn redo(&mut self) -> AppResult<()> {
+        let ed = self.get_active_editor_mut()?;
+        ed.redo()
+    }
+
     // 用AsRef<Path>，调用方可传入多种类型。
     pub fn open(&mut self, i_path: impl AsRef<Path>) -> AppResult<()> {
         let path = i_path.as_ref();
@@ -44,32 +57,16 @@ impl Workspace {
         Ok(())
     }
 
-    pub fn append(&mut self, text: &str) -> AppResult<()> {
-        let active = self
-            .active
-            .clone()
-            .ok_or_else(|| AppError::InvalidArgs("no active file".into()))?;
-
-        let ed = self
-            .editors
-            .get_mut(&active)
-            .ok_or_else(|| AppError::InvalidArgs("couldn't open active file".into()))?;
-        
-        // 无返回值。
-        ed.append(text);
-        Ok(())
-    }
-
     pub fn show(&self, start: Option<usize>, end: Option<usize>) -> AppResult<String> {
         let active = self
             .active
             .clone()
-            .ok_or_else(|| AppError::InvalidArgs("no active file".into()))?;
+            .ok_or_else(|| AppError::InternalError("no active file".into()))?;
 
         let ed = self
             .editors
             .get(&active)
-            .ok_or_else(|| AppError::InvalidArgs("couldn't open active file".into()))?;
+            .ok_or_else(|| AppError::InternalError("couldn't open active file".into()))?;
 
         let n = ed.count_lines();
         if n == 0 {
@@ -156,5 +153,17 @@ impl Workspace {
                 .as_ref()
                 .map(|p| p.to_string_lossy().into_owned()),
         }
+    }
+
+    // 辅助函数
+    fn get_active_editor_mut(&mut self) -> AppResult<&mut Editor> {
+        let path = self
+            .active
+            .clone()
+            .ok_or_else(|| AppError::InternalError("no active file.".into()))?;
+        
+        self.editors
+            .get_mut(&path)
+            .ok_or_else(|| AppError::InvalidArgs("active editor not found".into()))
     }
 }

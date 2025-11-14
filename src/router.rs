@@ -1,56 +1,57 @@
-//! 命令分发路由
-//! 把字符串映射到具体的处理逻辑。
+// router.rs
 
 use std::collections::HashMap;
 use crate::{
-    application::Application, 
-    outcome::Outcome, 
-    error::{AppResult, AppError},
-    command::*,
+    commands::{
+        COMMANDS, 
+        CommandDef, 
+        Handler,
+    },
+    error::{
+        AppResult, 
+        AppError
+    },
 };
-
-pub type Handler = fn(&mut Application, &[String]) -> AppResult<Outcome>;
-
-// 所有命令在这里注册。
-static REGISTRY: &[(&str, Handler)] = &[
-    ("load",    cmd_load),
-    ("append",  cmd_append),
-    ("show",    cmd_show),
-    ("exit",    cmd_exit),
-    ("save",    cmd_save),
-];
+use shell_words::split;
 
 pub struct Router {
-    map: HashMap<String, Handler>,
+    table: HashMap<&'static str, Handler>,
 }
 
 impl Router {
-    // 初始化：注册函数表。
     pub fn new() -> Self {
-        let mut map = HashMap::with_capacity(REGISTRY.len());
-        for &(name, handler) in REGISTRY {
-            map.insert(name.to_string(), handler);
+        let mut router = Router {
+            table: HashMap::new(),
+        };
+        // 启动时把所有命令注册进去
+        router.register_all(COMMANDS);
+        router
+    }
+
+    fn register_all(&mut self, commands: &[CommandDef]) {
+        for cmd in commands {
+            // 同名覆盖就覆盖，问题不大，你也可以加检查
+            self.table.insert(cmd.name, cmd.handler);
         }
-        Self { map }
     }
 
-    /// 解析：“要调用哪个处理器”和“参数”
+    /// 只解析，不执行：
+    /// 返回：(handler 函数指针, 参数 Vec<String>)
     pub fn resolve(&self, line: &str) -> AppResult<(Handler, Vec<String>)> {
-        let (cmd, args) = parse_command(line)?;
-        let h = self.map.get(&cmd).ok_or(AppError::UnknownCommand(cmd))?;
-        Ok((*h, args))
+        let parts = split(line)  // 支持引号、转义、空格、特殊符号
+            .map_err(|e| AppError::InvalidCommand(e.to_string()))?;
+
+        if parts.is_empty() {
+            return Err(AppError::InvalidCommand("空命令".into()));
+        }
+
+        let cmd_name = &parts[0];
+        let args = parts[1..].to_vec();
+
+        let handler = self.table
+            .get(cmd_name.as_str())
+            .ok_or_else(|| AppError::UnknownCommand(cmd_name.clone()))?;
+
+        Ok((*handler, args))
     }
-}
-
-
-fn parse_command(line: &str) -> AppResult<(String, Vec<String>)> {
-    let parts = shell_words::split(line)
-        .map_err(|_| AppError::InvalidArgs("parse failed".into()))?;
-
-    if parts.is_empty() {
-        return Ok((String::new(), Vec::new()));
-    }
-    let cmd  = parts[0].clone();
-    let args = parts.into_iter().skip(1).collect();
-    Ok((cmd, args))
 }
