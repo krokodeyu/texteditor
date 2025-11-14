@@ -44,45 +44,45 @@
 
 ### 工作区命令（10）
 
-- `load <file>`（存在即读，不存在则新建并置活动）
+- [x] `load <file>`（存在即读，不存在则新建并置活动） 
 
-- `save [file|all]`（成功清除 modified，无法写入需报错）
+- [x] `save [file|all]`（成功清除 modified，无法写入需报错）
 
-- `init <file> [with-log]`（首行可写 `# log`）
+- [ ] `init <file> [with-log]`（首行可写 `# log`）
 
-- `close [file]`
+- [ ] `close [file]`
 
-- `edit <file>`
+- [ ] `edit <file>`
 
-- `editor-list`
+- [ ] `editor-list`
 
-- `dir-tree [path]`
+- [ ] `dir-tree [path]`
 
-- `undo`
+- [ ] `undo`
 
-- `redo`
+- [ ] `redo`
 
-- `exit`（退出前保存工作区；对未保存文件逐一提示）
+- [ ] `exit`（退出前保存工作区；对未保存文件逐一提示）
 
 ### 文本编辑命令（5）
 
-- `append "text"`（在末尾追加一行）
+- [x] `append "text"`（在末尾追加一行）
 
-- `insert <line:col> "text"`（支持 `\n` 拆多行；校验越界与空文件非 1:1）
+- [ ] `insert <line:col> "text"`（支持 `\n` 拆多行；校验越界与空文件非 1:1）
 
-- `delete <line:col> <len>`（不可跨行；长度不能超出行尾）
+- [ ] `delete <line:col> <len>`（不可跨行；长度不能超出行尾）
 
-- `replace <line:col> <len> "text"`（等同先删再插）
+- [ ] `replace <line:col> <len> "text"`（等同先删再插）
 
-- `show [start:end]`（按行范围显示）
+- [x] `show [start:end]`（按行范围显示）
 
 ### 日志命令（3）
 
-- `log-on [file]`
+- [ ] `log-on [file]`
 
-- `log-off [file]`（停止监听但不删除已有日志）
+- [ ] `log-off [file]`（停止监听但不删除已有日志）
 
-- `log-show [file]`（输出 `.filename.log` 内容）
+- [ ] `log-show [file]`（输出 `.filename.log` 内容）
 
 ---
 

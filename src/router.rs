@@ -11,6 +11,15 @@ use crate::{
 
 pub type Handler = fn(&mut Application, &[String]) -> AppResult<Outcome>;
 
+// 所有命令在这里注册。
+static REGISTRY: &[(&str, Handler)] = &[
+    ("load",    cmd_load),
+    ("append",  cmd_append),
+    ("show",    cmd_show),
+    ("exit",    cmd_exit),
+    ("save",    cmd_save),
+];
+
 pub struct Router {
     map: HashMap<String, Handler>,
 }
@@ -18,19 +27,11 @@ pub struct Router {
 impl Router {
     // 初始化：注册函数表。
     pub fn new() -> Self {
-        let mut r = Self { map: HashMap::new() };
-        r.register("load",    cmd_load);
-        r.register("append",  cmd_append);
-        r.register("show",    cmd_show);
-        r.register("exit",    cmd_exit);
-        r.register("save",    cmd_save);
-        r
-    }
-
-    pub fn register(&mut self, name: &str, handler: Handler) -> &mut Self {
-        let key = name.trim().to_ascii_lowercase();
-        self.map.insert(key, handler);
-        self
+        let mut map = HashMap::with_capacity(REGISTRY.len());
+        for &(name, handler) in REGISTRY {
+            map.insert(name.to_string(), handler);
+        }
+        Self { map }
     }
 
     /// 解析：“要调用哪个处理器”和“参数”

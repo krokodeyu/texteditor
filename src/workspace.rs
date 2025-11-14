@@ -83,22 +83,22 @@ impl Workspace {
         Ok(ed.show(s, e))
     }
 
-    pub fn save_file(&self, path: impl AsRef<Path>) -> AppResult<()> {
+    pub fn save_file(&mut self, path: impl AsRef<Path>) -> AppResult<()> {
         let p = path.as_ref();
         let key: PathBuf = p.to_path_buf();
 
         let ed = self
             .editors
-            .get(&key)
+            .get_mut(&key)
             .ok_or_else(|| AppError::InvalidArgs("no such path".into()))?;
 
-        self.save_editor_to(p, &ed)?;
+        ed.save_to(p)?;
         Ok(())
     }
 
-    pub fn save_all(&self) -> AppResult<()> {
-        for (p, ed) in &self.editors {
-            self.save_editor_to(p, &ed)?;
+    pub fn save_all(&mut self) -> AppResult<()> {
+        for (p, ed) in self.editors.iter_mut() {
+            ed.save_to(p)?;
         }
         Ok(())
     }
@@ -156,12 +156,5 @@ impl Workspace {
                 .as_ref()
                 .map(|p| p.to_string_lossy().into_owned()),
         }
-    }
-
-    fn save_editor_to(&self, p: impl AsRef<Path>, ed: &Editor) -> AppResult<()>{
-        let path = p.as_ref();
-        let content = ed.show(1, ed.count_lines());
-        fs::write(path, content)?;
-        Ok(())
     }
 }

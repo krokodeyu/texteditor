@@ -1,6 +1,10 @@
 //! 文本编辑器：行数组存储内容。
 
 use std::fmt::Write;
+use std::fs;
+use std::path::Path;
+
+use crate::error::AppResult;
 
 #[derive(Default)]
 pub struct Editor {
@@ -29,6 +33,16 @@ impl Editor {
     pub fn load_from(&mut self, content: &str) {
         self.lines = content.lines().map(|s| s.to_string()).collect();
         self.modified = false;
+    }
+
+    pub fn save_to(&mut self, p: impl AsRef<Path>) -> AppResult<()> {
+        fs::write(p.as_ref(), self.to_string())?;
+        self.modified = false;
+        Ok(())
+    }
+
+    pub fn to_string(&self) -> String {
+        self.lines.join("\n")
     }
 
     pub fn count_lines(&self) -> usize { self.lines.len() }
