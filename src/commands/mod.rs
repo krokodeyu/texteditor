@@ -14,9 +14,13 @@ pub struct CommandDef {
 
 // 各命令模块
 mod append;
+mod close;
 mod load;
 mod show;
+mod edit;
+mod editor_list;
 mod exit;
+mod init;
 mod save;
 mod undo;
 mod redo;
@@ -24,9 +28,13 @@ pub mod doc_command;
 
 // 导出子模块内部的 CommandDef 列表
 use append::APPEND_COMMAND;
+use close::CLOSE_COMMAND;
 use load::LOAD_COMMAND;
 use show::SHOW_COMMAND;
+use edit::EDIT_COMMAND;
+use editor_list::LIST_COMMAND;
 use exit::EXIT_COMMAND;
+use init::INIT_COMMAND;
 use save::SAVE_COMMAND;
 use undo::UNDO_COMMAND;
 use redo::REDO_COMMAND;
@@ -34,9 +42,13 @@ use redo::REDO_COMMAND;
 /// 全局静态命令表
 pub static COMMANDS: &[CommandDef] = &[
     APPEND_COMMAND,
+    CLOSE_COMMAND,
     LOAD_COMMAND,
     SHOW_COMMAND,
+    EDIT_COMMAND,
+    LIST_COMMAND,
     EXIT_COMMAND,
+    INIT_COMMAND,
     SAVE_COMMAND,
     UNDO_COMMAND,
     REDO_COMMAND,

@@ -58,11 +58,11 @@
 
 - [ ] `dir-tree [path]`
 
-- [ ] `undo`
+- [x] `undo`
 
-- [ ] `redo`
+- [x] `redo`
 
-- [ ] `exit`（退出前保存工作区；对未保存文件逐一提示）
+- [x] `exit`（退出前保存工作区；对未保存文件逐一提示）
 
 ### 文本编辑命令（5）
 
@@ -123,8 +123,8 @@
   完成`load/save/init/append/show/undo/redo` 与最小日志读取；落地 `.editor_workspace` 的读写骨架。编写测试。
 
 - **M2（文本四件套）**：
-
-- 插入/删除/替换的边界与错误；加 `edit/editor-list/close`。
+  
+  插入/删除/替换的边界与错误；加 `edit/editor-list/close`。
 
 - **M3（工作区完善）**：`dir-tree/exit`（退出前保存与提示）。
 

@@ -5,7 +5,7 @@ pub fn cmd_load(app: &mut Application, args: &[String]) -> AppResult<Outcome> {
     let path = args.get(0)
         .ok_or_else(|| crate::error::AppError::InvalidArgs("load <file>".into()))?;
 
-    app.workspace.open(std::path::Path::new(path))?;
+    app.workspace.load(std::path::Path::new(path))?;
 
     Ok(Outcome {
         print: Some(format!("Loaded {}", path)),

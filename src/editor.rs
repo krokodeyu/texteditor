@@ -24,6 +24,7 @@ pub struct Editor {
 }
 
 impl Editor {
+    // bool类型的默认值是false
     pub fn new() -> Self { Self::default() }
 
     pub fn exec_doc(&mut self, mut cmd: Box<dyn DocCommand>) -> AppResult<()> {
