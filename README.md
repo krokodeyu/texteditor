@@ -48,13 +48,13 @@
 
 - [x] `save [file|all]`（成功清除 modified，无法写入需报错）
 
-- [ ] `init <file> [with-log]`（首行可写 `# log`）
+- [x] `init <file> [with-log]`（首行可写 `# log`）
 
-- [ ] `close [file]`
+- [x] `close [file]`
 
-- [ ] `edit <file>`
+- [x] `edit <file>`
 
-- [ ] `editor-list`
+- [x] `editor-list`
 
 - [ ] `dir-tree [path]`
 

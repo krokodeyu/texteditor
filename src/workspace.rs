@@ -245,7 +245,7 @@ impl Workspace {
     fn write_editor(p: impl AsRef<Path>, is_active: bool, modified: bool) -> String {
         let mut line: String = String::new();
         if is_active {
-            line.push_str("> ");
+            line.push_str("* ");
         } else {
             line.push_str("  ");
         }
