@@ -15,6 +15,7 @@ pub struct CommandDef {
 // 各命令模块
 mod append;
 mod close;
+mod dir_tree;
 mod load;
 mod show;
 mod edit;
@@ -29,6 +30,7 @@ pub mod doc_command;
 // 导出子模块内部的 CommandDef 列表
 use append::APPEND_COMMAND;
 use close::CLOSE_COMMAND;
+use dir_tree::DIR_TREE_COMMAND;
 use load::LOAD_COMMAND;
 use show::SHOW_COMMAND;
 use edit::EDIT_COMMAND;
@@ -43,6 +45,7 @@ use redo::REDO_COMMAND;
 pub static COMMANDS: &[CommandDef] = &[
     APPEND_COMMAND,
     CLOSE_COMMAND,
+    DIR_TREE_COMMAND,
     LOAD_COMMAND,
     SHOW_COMMAND,
     EDIT_COMMAND,

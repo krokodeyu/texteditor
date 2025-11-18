@@ -17,10 +17,21 @@ use crate::{
 #[derive(Default)]
 pub struct Workspace {
     editors: HashMap<PathBuf, Editor>,
-    active: Option<PathBuf>
+    active: Option<PathBuf>,
+    base_dir: PathBuf,
 }
 
 impl Workspace {
+    // 默认生成逻辑
+    pub fn default() -> Self {
+        let base = "./work_dir".into();
+        Self {
+            editors: HashMap::new(),
+            active: None,
+            base_dir: base,
+        }
+    }
+
     /// 用于处理需要undo的函数。
     pub fn exec_doc(&mut self, cmd: Box<dyn DocCommand>) -> AppResult<()> {
         let ed = self.get_active_editor_mut()?;
@@ -220,6 +231,24 @@ impl Workspace {
                 .active
                 .as_ref()
                 .map(|p| p.to_string_lossy().into_owned()),
+        }
+    }
+
+    /// 把命令行参数里的 path 解析成最终要用的绝对/规范路径：
+    /// - None      -> base_dir
+    /// - 绝对路径   -> 原样返回
+    /// - 相对路径   -> base_dir.join(path)
+    pub fn resolve_path(&self, arg: Option<&str>) -> PathBuf {
+        match arg {
+            Some(s) => {
+                let p = PathBuf::from(s);
+                if p.is_absolute() {
+                    p
+                } else {
+                    self.base_dir.join(p)
+                }
+            }
+            None => self.base_dir.clone(),
         }
     }
 
