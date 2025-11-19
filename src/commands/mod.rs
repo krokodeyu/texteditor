@@ -18,6 +18,7 @@ mod close;
 mod delete;
 mod dir_tree;
 mod load;
+mod log;
 mod show;
 mod edit;
 mod editor_list;
@@ -37,6 +38,9 @@ use close::CLOSE_COMMAND;
 use delete::DELETE_COMMAND;
 use dir_tree::DIR_TREE_COMMAND;
 use load::LOAD_COMMAND;
+use log::LOG_ON_COMMAND;
+use log::LOG_OFF_COMMAND;
+use log::LOG_SHOW_COMMAND;
 use show::SHOW_COMMAND;
 use edit::EDIT_COMMAND;
 use editor_list::LIST_COMMAND;
@@ -55,6 +59,9 @@ pub static COMMANDS: &[CommandDef] = &[
     DELETE_COMMAND,
     DIR_TREE_COMMAND,
     LOAD_COMMAND,
+    LOG_ON_COMMAND,
+    LOG_OFF_COMMAND,
+    LOG_SHOW_COMMAND,
     SHOW_COMMAND,
     EDIT_COMMAND,
     LIST_COMMAND,

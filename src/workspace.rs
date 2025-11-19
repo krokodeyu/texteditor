@@ -9,6 +9,7 @@ use std::{
     fmt::Write,
 };
 
+
 use crate::{
     commands::doc_command::DocCommand, editor::Editor, error::{AppError, AppResult}, persist::{FileFlags, WorkspaceMemento}
 };
@@ -261,6 +262,56 @@ impl Workspace {
 
     pub fn get_base_dir(&self) -> PathBuf {
         self.base_dir.clone()
+    }
+
+    pub fn log_on(&mut self, path: impl AsRef<Path>) -> AppResult<()> {
+        let p = path.as_ref();
+        let key: PathBuf = p.to_path_buf();
+
+        let ed = self
+            .editors
+            .get_mut(&key)
+            .ok_or_else(|| AppError::InvalidArgs("no such path".into()))?;
+        ed.set_logging(true);
+        Ok(())
+    }
+
+    pub fn log_off(&mut self, path: impl AsRef<Path>) -> AppResult<()> {
+        let p = path.as_ref();
+        let key: PathBuf = p.to_path_buf();
+
+        let ed = self
+            .editors
+            .get_mut(&key)
+            .ok_or_else(|| AppError::InvalidArgs("no such path".into()))?;
+        ed.set_logging(false);
+        Ok(())
+    }
+
+    pub fn log_show(&self, path: impl AsRef<Path>) -> AppResult<String> {
+        let p = path.as_ref();
+
+        // 拿到文件名，决定日志文件名
+        let file_name = p
+            .file_name()
+            .ok_or_else(|| AppError::InvalidArgs(format!(
+                "invalid file path for log-show: {}",
+                p.display()
+            )))?
+            .to_string_lossy()
+            .into_owned();
+
+        let log_path = self.base_dir.join(format!(".{}.log", file_name));
+
+        if !log_path.exists() {
+            return Err(AppError::InvalidArgs(format!(
+                "log file not found: {}",
+                log_path.display()
+            )));
+        }
+
+        let content = fs::read_to_string(&log_path).map_err(AppError::Io)?;
+        Ok(content)
     }
 
     // 辅助函数

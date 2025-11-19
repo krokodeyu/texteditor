@@ -56,7 +56,7 @@
 
 - [x] `editor-list`
 
-- [ ] `dir-tree [path]`
+- [x] `dir-tree [path]`
 
 - [x] `undo`
 
@@ -68,21 +68,21 @@
 
 - [x] `append "text"`（在末尾追加一行）
 
-- [ ] `insert <line:col> "text"`（支持 `\n` 拆多行；校验越界与空文件非 1:1）
+- [x] `insert <line:col> "text"`（支持 `\n` 拆多行；校验越界与空文件非 1:1）
 
-- [ ] `delete <line:col> <len>`（不可跨行；长度不能超出行尾）
+- [x] `delete <line:col> <len>`（不可跨行；长度不能超出行尾）
 
-- [ ] `replace <line:col> <len> "text"`（等同先删再插）
+- [x] `replace <line:col> <len> "text"`（等同先删再插）
 
 - [x] `show [start:end]`（按行范围显示）
 
 ### 日志命令（3）
 
-- [ ] `log-on [file]`
+- [x] `log-on [file]`
 
-- [ ] `log-off [file]`（停止监听但不删除已有日志）
+- [x] `log-off [file]`（停止监听但不删除已有日志）
 
-- [ ] `log-show [file]`（输出 `.filename.log` 内容）
+- [x] `log-show [file]`（输出 `.filename.log` 内容）
 
 ---
 
