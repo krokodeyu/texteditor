@@ -10,7 +10,8 @@ pub fn cmd_init(app: &mut Application, args: &[String]) -> AppResult<Outcome> {
         Some("with-log") => true,
         Some(_) => false,
     };
-    app.workspace.init(path, logging)?;
+    app.workspace.init(&path, logging)?;
+    app.workspace.edit(&path)?;
     Ok(Outcome {
         print: Some(format!("Initialized {}", raw_arg)),
         log: Some(format!("init {}", raw_arg)),

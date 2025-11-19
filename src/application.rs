@@ -20,10 +20,10 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> AppResult<Self> {
-        let mut bus = EventBus::new();
-        bus.subscribe(Box::new(Logger::new()));
-
         let mut workspace = Workspace::default();
+        let mut bus = EventBus::new();
+        bus.subscribe(Box::new(Logger::new(workspace.get_base_dir())));
+
         let path = Path::new(".editor_workspace");
         if path.exists() {
             if let Ok(m) = WorkspaceMemento::load(path) {
@@ -32,7 +32,7 @@ impl Application {
             }
         }
 
-        Ok(Self { router: Router::new(), workspace: Workspace::default(), bus })
+        Ok(Self { router: Router::new(), workspace, bus })
     }
 
     pub fn run(&mut self) -> AppResult<()> {
@@ -81,7 +81,8 @@ impl Application {
 
     pub fn save_workspace_memento(&self) -> AppResult<()> {
         let memento = self.workspace.to_memento();
-        let path = PathBuf::from(".editor_workspace");
+        let base: PathBuf = self.workspace.get_base_dir();
+        let path: PathBuf = base.join(".editor_workspace");
         memento.save(&path)?;
         println!("[info] workspace saved to {:?}", path);
         Ok(())

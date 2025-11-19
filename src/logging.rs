@@ -4,25 +4,30 @@ use std::{
     collections::HashSet,
     fs::OpenOptions,
     io::Write,
-    path::{Path, PathBuf},
+    path::{PathBuf},
 };
 use chrono::Local;
 use crate::event::{Event, Subscriber};
 
 pub struct Logger {
     written: HashSet<PathBuf>,
+    base_dir: PathBuf,
 }
 
 impl Logger {
-    pub fn new() -> Self { Self { written: HashSet::new() } }
+    pub fn new(base_dir: PathBuf) -> Self { Self { written: HashSet::new(), base_dir: base_dir } }
 
-    fn logfile_for(path: &Option<PathBuf>) -> PathBuf {
-        if let Some(p) = path {
-            let dir = p.parent().unwrap_or_else(|| Path::new("."));
-            let base = p.file_name().unwrap_or_default().to_string_lossy();
-            dir.join(format!(".{}.log", base))
-        } else {
-            PathBuf::from(".app.log")
+    fn logfile_for(&self, path: &Option<PathBuf>) -> PathBuf {
+        match path {
+            Some(p) => {
+                // 文件日志：放在 base_dir 下，名字基于文件名
+                let file_name = p.file_name().unwrap_or_default().to_string_lossy();
+                self.base_dir.join(format!(".{}.log", file_name))
+            }
+            None => {
+                // app 级别日志：work_dir/.app.log
+                self.base_dir.join(".app.log")
+            }
         }
     }
 }
@@ -32,7 +37,7 @@ impl Subscriber for Logger {
         match e {
             Event::SessionStart => {}
             Event::Command { file, cmd } => {
-                let path = Self::logfile_for(file);
+                let path = self.logfile_for(file);
                 let write_header = self.written.insert(path.clone());
                 if let Ok(mut f) = OpenOptions::new().append(true).create(true).open(&path) {
                     if write_header {
@@ -42,7 +47,7 @@ impl Subscriber for Logger {
                 }
             }
             Event::Error { code, message } => {
-                let path = PathBuf::from(".app.log");
+                let path = self.base_dir.join(".app.log");
                 if let Ok(mut f) = OpenOptions::new().append(true).create(true).open(path) {
                     let _ = writeln!(f, "[error:{}] {} {}", code, Local::now(), message);
                 }

@@ -24,11 +24,17 @@ pub struct Workspace {
 impl Workspace {
     // 默认生成逻辑
     pub fn default() -> Self {
-        let base = "./work_dir".into();
+        let base = PathBuf::from("work_dir");
+        let base_d = if !base.exists() {
+            fs::create_dir_all(&base).ok();
+            base
+        } else {
+            base
+        };
         Self {
             editors: HashMap::new(),
             active: None,
-            base_dir: base,
+            base_dir: base_d,
         }
     }
 
@@ -50,6 +56,7 @@ impl Workspace {
 
     // 以下为不需要undo的函数。
 
+    //  文件处理函数
     /// 初始化文件，如果文件已存在，直接返回错误。
     pub fn init(&mut self, i_path: impl AsRef<Path>, i_logging: bool) -> AppResult<()> {
         let path: &Path = i_path.as_ref();
@@ -250,6 +257,10 @@ impl Workspace {
             }
             None => self.base_dir.clone(),
         }
+    }
+
+    pub fn get_base_dir(&self) -> PathBuf {
+        self.base_dir.clone()
     }
 
     // 辅助函数
