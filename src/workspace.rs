@@ -350,3 +350,119 @@ impl Workspace {
         line
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::tempdir;
+    use crate::editor::Editor;
+
+    /// 每个测试用一个独立的临时目录，并把 workspace.base_dir 指过去
+    fn new_temp_workspace() -> (Workspace, tempfile::TempDir) {
+        let tmp = tempdir().expect("create tempdir failed");
+
+        let mut ws = Workspace::default();
+        // 这里直接改私有字段没问题，因为 tests 是同一模块的子模块
+        ws.base_dir = tmp.path().join("work_dir");
+        fs::create_dir_all(&ws.base_dir).expect("create work_dir failed");
+
+        (ws, tmp)
+    }
+
+    #[test]
+    fn resolve_path_uses_base_dir_for_relative_paths() {
+        let (ws, _tmp) = new_temp_workspace();
+        let base = ws.base_dir.clone();
+
+        // 相对路径：应当挂在 base_dir 下面
+        let p1 = ws.resolve_path(Some("foo.txt"));
+        assert_eq!(p1, base.join("foo.txt"));
+
+        // 绝对路径：应当原样返回
+        let abs = base.join("sub/abs.txt");
+        let p2 = ws.resolve_path(Some(abs.to_str().unwrap()));
+        assert_eq!(p2, abs);
+
+        // None：约定返回 base_dir 本身
+        let p3 = ws.resolve_path(None);
+        assert_eq!(p3, base);
+    }
+
+    #[test]
+    fn save_file_writes_editor_content_to_disk() {
+        let (mut ws, _tmp) = new_temp_workspace();
+
+        // 逻辑路径："foo.txt" -> base_dir/foo.txt
+        let file_path = ws.resolve_path(Some("foo.txt"));
+
+        // 往 workspace.editors 里塞一个 Editor（不需要对外 API）
+        let mut ed = Editor::default();
+        ed.append_line("hello workspace");
+        ws.editors.insert(file_path.clone(), ed);
+        ws.active = Some(file_path.clone());
+
+        // 调用 save_file
+        ws.save_file(&file_path).expect("save_file failed");
+
+        // 磁盘上应该出现 base_dir/foo.txt，内容为 "hello workspace"
+        let content = fs::read_to_string(&file_path).expect("read saved file failed");
+        assert_eq!(content.trim_end(), "hello workspace");
+    }
+
+    #[test]
+    fn save_all_writes_all_open_editors() {
+        let (mut ws, _tmp) = new_temp_workspace();
+
+        let file_a = ws.resolve_path(Some("a.txt"));
+        let file_b = ws.resolve_path(Some("subdir/b.txt"));
+
+        // 确保子目录也存在，防止 save_to 里直接 write 报目录不存在
+        if let Some(parent) = file_b.parent() {
+            fs::create_dir_all(parent).expect("create subdir failed");
+        }
+
+        let mut ed_a = Editor::default();
+        ed_a.append_line("AAAA");
+        ws.editors.insert(file_a.clone(), ed_a);
+
+        let mut ed_b = Editor::default();
+        ed_b.append_line("BBBB");
+        ws.editors.insert(file_b.clone(), ed_b);
+
+        ws.save_all().expect("save_all failed");
+
+        let content_a = fs::read_to_string(&file_a).expect("read a.txt failed");
+        let content_b = fs::read_to_string(&file_b).expect("read b.txt failed");
+
+        assert_eq!(content_a.trim_end(), "AAAA");
+        assert_eq!(content_b.trim_end(), "BBBB");
+    }
+
+    #[test]
+    fn log_show_reads_dot_filename_log_under_base_dir() {
+        let (ws, _tmp) = new_temp_workspace();
+        let base = ws.base_dir.clone();
+
+        // 源文件路径：假设是 work_dir/main.rs
+        let src = base.join("main.rs");
+        // Logger 约定的日志路径：work_dir/.main.rs.log
+        let log_path = base.join(".main.rs.log");
+
+        fs::write(&log_path, "LOG CONTENT\nLINE 2").expect("write log file failed");
+
+        let content = ws.log_show(&src).expect("log_show failed");
+        assert_eq!(content, "LOG CONTENT\nLINE 2");
+    }
+
+    #[test]
+    fn log_show_returns_error_if_log_not_found() {
+        let (ws, _tmp) = new_temp_workspace();
+        let base = ws.base_dir.clone();
+
+        let src = base.join("no_log_here.rs");
+
+        let result = ws.log_show(&src);
+        assert!(result.is_err(), "expected error when log file is missing");
+    }
+}

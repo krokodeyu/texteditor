@@ -239,3 +239,150 @@ impl Editor {
 
     fn line_at(&self, idx: usize) -> Option<&str> { self.lines.get(idx).map(|s| s.as_str()) }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::commands::doc_command::DocCommand;
+    use crate::error::AppResult;
+
+    fn editor_with_lines(lines: &[&str]) -> Editor {
+        let mut ed = Editor::default();
+        for &l in lines {
+            ed.append_line(l);
+        }
+        ed
+    }
+
+    #[test]
+    fn append_line_and_pop_line() {
+        let mut ed = Editor::default();
+        assert_eq!(ed.count_lines(), 0);
+
+        ed.append_line("l0");
+        ed.append_line("l1");
+        assert_eq!(ed.count_lines(), 2);
+
+        ed.pop_line().expect("pop_line should succeed");
+        assert_eq!(ed.count_lines(), 1);
+
+        ed.pop_line().expect("second pop_line should succeed");
+        assert_eq!(ed.count_lines(), 0);
+
+        // 第三次 pop 应该报错
+        assert!(ed.pop_line().is_err());
+    }
+
+    #[test]
+    fn insert_and_delete_basic() {
+        let mut ed = editor_with_lines(&["hello world"]);
+
+        // 在 "hello " 后插入 "rust "
+        ed.insert_text(1, 7, "rust ").expect("insert_text failed");
+        let line = ed.line_ref(1).unwrap().to_string();
+        assert_eq!(line, "hello rust world");
+
+        // 从列 7 删除 5 个字节（"rust "）
+        ed.delete_text(1, 7, 5).expect("delete_text failed");
+        let line = ed.line_ref(1).unwrap().to_string();
+        assert_eq!(line, "hello world");
+    }
+
+    #[test]
+    fn insert_and_peek() {
+        let mut ed = editor_with_lines(&["abcdef"]);
+        ed.insert_text(1, 4, "X").expect("insert_text failed");
+        // 行应该是 "abcXdef"
+        assert_eq!(ed.line_ref(1).unwrap(), "abcXdef");
+
+        // 从 'X' 位置 peek 一个字节
+        let s = ed.peek_text(1, 4, 1).expect("peek_text failed");
+        assert_eq!(s, "X");
+    }
+
+    #[test]
+    fn insert_out_of_range_should_error() {
+        let mut ed = editor_with_lines(&["abc"]);
+
+        // 列超出范围
+        assert!(ed.insert_text(1, 10, "x").is_err());
+        // 行超出范围
+        assert!(ed.insert_text(2, 1, "x").is_err());
+    }
+
+    #[test]
+    fn delete_out_of_range_should_error() {
+        let mut ed = editor_with_lines(&["abcd"]);
+
+        // 从列 3 删除 10 个字节，越界
+        assert!(ed.delete_text(1, 3, 10).is_err());
+        // 行越界
+        assert!(ed.delete_text(2, 1, 1).is_err());
+    }
+
+    /// 一个用于测试的命令：执行时追加一行，撤销时删除最后一行
+    struct TestAppendCmd {
+        text: String,
+    }
+
+    impl TestAppendCmd {
+        fn new(text: &str) -> Self {
+            Self { text: text.to_string() }
+        }
+    }
+
+    impl DocCommand for TestAppendCmd {
+        fn execute(&mut self, ed: &mut Editor) -> AppResult<()> {
+            ed.append_line(&self.text);
+            Ok(())
+        }
+
+        fn undo(&mut self, ed: &mut Editor) -> AppResult<()> {
+            ed.pop_line()
+        }
+    }
+
+    #[test]
+    fn undo_redo_with_doc_command_stack() {
+        let mut ed = editor_with_lines(&["base"]);
+
+        let cmd1 = TestAppendCmd::new("l1");
+        let cmd2 = TestAppendCmd::new("l2");
+
+        ed.exec_doc(Box::new(cmd1)).expect("exec cmd1 failed");
+        ed.exec_doc(Box::new(cmd2)).expect("exec cmd2 failed");
+
+        assert_eq!(ed.count_lines(), 3);
+        assert_eq!(ed.line_ref(1).unwrap(), "base");
+        assert_eq!(ed.line_ref(2).unwrap(), "l1");
+        assert_eq!(ed.line_ref(3).unwrap(), "l2");
+
+        // undo 一次：撤销 l2
+        ed.undo().expect("undo 1 failed");
+        assert_eq!(ed.count_lines(), 2);
+        assert_eq!(ed.line_ref(2).unwrap(), "l1");
+
+        // 再 undo：撤销 l1
+        ed.undo().expect("undo 2 failed");
+        assert_eq!(ed.count_lines(), 1);
+        assert_eq!(ed.line_ref(1).unwrap(), "base");
+
+        // redo 一次：重做 l1
+        ed.redo().expect("redo 1 failed");
+        assert_eq!(ed.count_lines(), 2);
+        assert_eq!(ed.line_ref(2).unwrap(), "l1");
+
+        // 再 redo：重做 l2
+        ed.redo().expect("redo 2 failed");
+        assert_eq!(ed.count_lines(), 3);
+        assert_eq!(ed.line_ref(3).unwrap(), "l2");
+    }
+
+    #[test]
+    fn undo_redo_on_empty_stack_should_error() {
+        let mut ed = Editor::default();
+
+        assert!(ed.undo().is_err());
+        assert!(ed.redo().is_err());
+    }
+}
