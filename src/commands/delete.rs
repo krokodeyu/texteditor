@@ -1,5 +1,5 @@
 use crate::{
-    application::Application, commands::{doc_command::DocCommand, util}, editor::Editor, error::{AppError, AppResult}, outcome::Outcome
+    application::Application, commands::{doc_command::DocCommand, util}, text_editor::TextEditor, error::{AppError, AppResult}, outcome::Outcome
 };
 use super::CommandDef;
 
@@ -24,13 +24,13 @@ impl DeleteTextCommand {
 }
 
 impl DocCommand for DeleteTextCommand {
-    fn execute(&mut self, ed: &mut Editor) -> AppResult<()> {
+    fn execute(&mut self, ed: &mut TextEditor) -> AppResult<()> {
         // 先把要删的内容记下来，方便 undo
         self.deleted_text = ed.peek_text(self.line, self.col, self.len)?;
         ed.delete_text(self.line, self.col, self.len)
     }
 
-    fn undo(&mut self, ed: &mut Editor) -> AppResult<()> {
+    fn undo(&mut self, ed: &mut TextEditor) -> AppResult<()> {
         ed.insert_text(self.line, self.col, &self.deleted_text)
     }
 }

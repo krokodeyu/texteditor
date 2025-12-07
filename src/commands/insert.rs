@@ -1,5 +1,5 @@
 use crate::{
-    application::Application, commands::{doc_command::DocCommand, util}, editor::Editor, error::{AppError, AppResult}, outcome::Outcome
+    application::Application, commands::{doc_command::DocCommand, util}, text_editor::TextEditor, error::{AppError, AppResult}, outcome::Outcome
 };
 use super::CommandDef;
 
@@ -18,11 +18,11 @@ impl InsertTextCommand {
 }
 
 impl DocCommand for InsertTextCommand {
-    fn execute(&mut self, ed: &mut Editor) -> AppResult<()> {
+    fn execute(&mut self, ed: &mut TextEditor) -> AppResult<()> {
         ed.insert_text(self.line, self.col, &self.text)
     }
 
-    fn undo(&mut self, ed: &mut Editor) -> AppResult<()> {
+    fn undo(&mut self, ed: &mut TextEditor) -> AppResult<()> {
         // 假设 text 不含换行，长度用 text.len() 即可
         ed.delete_text(self.line, self.col, self.text.len())
     }

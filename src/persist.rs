@@ -3,10 +3,18 @@
 
 use std::{collections::HashMap, fs, path::Path};
 use serde::{Serialize, Deserialize};
-use crate::error::AppResult;
+use crate::{
+    error::AppResult,
+    editor_instance::EditorKind,
+};
+
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-pub struct FileFlags { pub modified: bool, pub logging: bool }
+pub struct FileFlags { 
+    pub modified: bool, 
+    pub logging: bool, 
+    pub kind: EditorKind,
+}
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct WorkspaceMemento {

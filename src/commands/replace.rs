@@ -2,7 +2,7 @@ use crate::{
     application::Application,
     outcome::Outcome,
     error::{AppError, AppResult},
-    editor::Editor,
+    text_editor::TextEditor,
     commands::{
         doc_command::DocCommand,
         util,
@@ -33,14 +33,14 @@ impl ReplaceTextCommand {
 }
 
 impl DocCommand for ReplaceTextCommand {
-    fn execute(&mut self, ed: &mut Editor) -> AppResult<()> {
+    fn execute(&mut self, ed: &mut TextEditor) -> AppResult<()> {
         self.old_text = ed.peek_text(self.line, self.col, self.len)?;
         ed.delete_text(self.line, self.col, self.len)?;
         ed.insert_text(self.line, self.col, &self.new_text)?;
         Ok(())
     }
 
-    fn undo(&mut self, ed: &mut Editor) -> AppResult<()> {
+    fn undo(&mut self, ed: &mut TextEditor) -> AppResult<()> {
         let new_len = self.new_text.len();
         ed.delete_text(self.line, self.col, new_len)?;
         ed.insert_text(self.line, self.col, &self.old_text)?;

@@ -1,6 +1,8 @@
 mod application;
 // mod command;
-mod editor;
+mod editor_instance;
+mod text_editor;
+mod xml_editor;
 mod error;
 mod event;
 mod logging;

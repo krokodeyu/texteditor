@@ -31,6 +31,7 @@ mod redo;
 mod replace;
 mod util;
 pub mod doc_command;
+pub mod xml_command;
 
 // 导出子模块内部的 CommandDef 列表
 use append::APPEND_COMMAND;

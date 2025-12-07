@@ -2,7 +2,8 @@
 //! 管理多文件上下文、状态持久化。
 
 use std::{
-    collections::HashMap, 
+    collections::HashMap,
+    collections::hash_map::Entry,
     fs, 
     io,
     path::{Path, PathBuf},
@@ -11,13 +12,17 @@ use std::{
 
 
 use crate::{
-    commands::doc_command::DocCommand, editor::Editor, error::{AppError, AppResult}, persist::{FileFlags, WorkspaceMemento}
+    commands::{doc_command::DocCommand, xml_command::XmlCommand}, 
+    editor_instance::{EditorInstance, EditorKind}, 
+    error::{AppError, AppResult}, 
+    persist::{FileFlags, WorkspaceMemento}, 
+    text_editor::TextEditor, 
+    xml_editor::XmlEditor,
 };
-
 
 #[derive(Default)]
 pub struct Workspace {
-    editors: HashMap<PathBuf, Editor>,
+    editors: HashMap<PathBuf, EditorInstance>,
     active: Option<PathBuf>,
     base_dir: PathBuf,
 }
@@ -41,8 +46,13 @@ impl Workspace {
 
     /// 用于处理需要undo的函数。
     pub fn exec_doc(&mut self, cmd: Box<dyn DocCommand>) -> AppResult<()> {
-        let ed = self.get_active_editor_mut()?;
+        let ed = self.get_active_editor_mut()?.as_text_mut()?;
         ed.exec_doc(cmd)
+    }
+
+    pub fn exec_xml(&mut self, cmd: Box<dyn XmlCommand>) -> AppResult<()> {
+        let ed = self.get_active_editor_mut()?.as_xml_mut()?;
+        ed.exec_xml(cmd)
     }
 
     pub fn undo(&mut self) -> AppResult<()> {
@@ -59,7 +69,7 @@ impl Workspace {
 
     //  文件处理函数
     /// 初始化文件，如果文件已存在，直接返回错误。
-    pub fn init(&mut self, i_path: impl AsRef<Path>, i_logging: bool) -> AppResult<()> {
+    pub fn init(&mut self, kind: EditorKind,i_path: impl AsRef<Path>, i_logging: bool) -> AppResult<()> {
         let path: &Path = i_path.as_ref();
         let key: PathBuf = path.to_path_buf();
 
@@ -67,13 +77,29 @@ impl Workspace {
             return Err(AppError::InvalidArgs("file already exists!".into()));
         }
 
-        let mut ed: Editor = Editor::default();
-        if i_logging {
-            ed.set_logging(true);
-            ed.append_line("# log");
-        }
+        //let mut ed: TextEditor = TextEditor::default();
+        //if i_logging {
+        //    ed.set_logging(true);
+        //    ed.append_line("# log");
+        //}
         
-        self.editors.insert(path.to_path_buf(), ed);
+        let instance = match kind {
+            EditorKind::Text => {
+                let mut ed: TextEditor = TextEditor::default();
+                if i_logging {
+                    ed.set_logging(true);
+                    ed.append_line("# log");
+                }
+                EditorInstance::Text(ed)
+            },
+            EditorKind::Xml => {
+                let ed: XmlEditor = XmlEditor::new_with_log(i_logging);
+                EditorInstance::Xml(ed)
+            }
+        };
+
+        self.editors.insert(path.to_path_buf(), instance);
+        self.active = Some(key);
 
         Ok(())
     }
@@ -90,15 +116,20 @@ impl Workspace {
             Err(e) => return Err(AppError::Io(e)),
         };
 
-        // 如果已存在，直接读取；否则新建一个editor
-        let ed = self
-            .editors
-            .entry(key.clone())
-            // or_insert_with():需要一个显式闭包或者函数作传入值。
-            .or_insert_with(Editor::new);
+        match self.editors.entry(key.clone()) {
+            // 已经有这个 editor：不重新载入，只切换 active
+            Entry::Occupied(_occupied) => {
+                // 如果你之后想加“刷新内容”，可以在这里对已有 editor 调用 load_from
+                self.active = Some(key);
+            }
 
-        ed.load_from(&content);
-        self.active = Some(key);
+            // 没有这个 editor：需要新建一个，可能失败，所以要 ?
+            Entry::Vacant(vacant) => {
+                let editor = Self::create_editor_for_path(path, &content)?;  // 👈 这里用 ?
+                vacant.insert(editor);
+                self.active = Some(key);
+            }
+        }
         Ok(())
     }
 
@@ -131,7 +162,8 @@ impl Workspace {
         let ed = self
             .editors
             .get(&active)
-            .ok_or_else(|| AppError::InternalError("couldn't open active file".into()))?;
+            .ok_or_else(|| AppError::InternalError("couldn't open active file".into()))?
+            .as_text()?;
 
         let n = ed.count_lines();
         if n == 0 {
@@ -203,12 +235,23 @@ impl Workspace {
                 Err(e) => return Err(AppError::Io(e)),
             };
 
-            let mut editor = Editor::new();
-            editor.load_from(&content);
-            editor.set_modified(flags.modified);
-            editor.set_logging(flags.logging);
+            let mut instance = match flags.kind {
+                EditorKind::Text => {
+                    let mut ed = TextEditor::new();
+                    ed.load_from(&content);
+                    EditorInstance::Text(ed)
+                }
+                EditorKind::Xml => {
+                    let mut ed = XmlEditor::new();
+                    ed.load_from(&content)?;
+                    EditorInstance::Xml(ed)
+                }
+            };
 
-            self.editors.insert(path, editor);
+            instance.set_modified(flags.modified);
+            instance.set_logging(flags.logging);
+
+            self.editors.insert(path, instance);
         }
 
         if let Some(active_str) = m.active {
@@ -230,6 +273,7 @@ impl Workspace {
                 FileFlags {
                     modified: e.is_modified(),
                     logging: e.logging_enabled(),
+                    kind: e.kind(),
                 },
             );
         }
@@ -315,7 +359,7 @@ impl Workspace {
     }
 
     // 辅助函数
-    fn get_active_editor_mut(&mut self) -> AppResult<&mut Editor> {
+    fn get_active_editor_mut(&mut self) -> AppResult<&mut EditorInstance> {
         let path = self
             .active
             .clone()
@@ -349,6 +393,21 @@ impl Workspace {
         }
         line
     }
+
+    fn create_editor_for_path(path: &Path, content: &str) -> AppResult<EditorInstance> {
+        match path.extension().and_then(|s| s.to_str()) {
+            Some("xml") => {
+                let mut ed = XmlEditor::new();
+                ed.load_from(content)?;
+                Ok(EditorInstance::Xml(ed))
+            }
+            _ => {
+                let mut ed = TextEditor::new();
+                ed.load_from(content);
+                Ok(EditorInstance::Text(ed))
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -356,7 +415,7 @@ mod tests {
     use super::*;
     use std::fs;
     use tempfile::tempdir;
-    use crate::editor::Editor;
+    use crate::text_editor::TextEditor;
 
     /// 每个测试用一个独立的临时目录，并把 workspace.base_dir 指过去
     fn new_temp_workspace() -> (Workspace, tempfile::TempDir) {
@@ -397,9 +456,9 @@ mod tests {
         let file_path = ws.resolve_path(Some("foo.txt"));
 
         // 往 workspace.editors 里塞一个 Editor（不需要对外 API）
-        let mut ed = Editor::default();
+        let mut ed = TextEditor::default();
         ed.append_line("hello workspace");
-        ws.editors.insert(file_path.clone(), ed);
+        ws.editors.insert(file_path.clone(), EditorInstance::Text(ed));
         ws.active = Some(file_path.clone());
 
         // 调用 save_file
@@ -422,13 +481,13 @@ mod tests {
             fs::create_dir_all(parent).expect("create subdir failed");
         }
 
-        let mut ed_a = Editor::default();
+        let mut ed_a = TextEditor::default();
         ed_a.append_line("AAAA");
-        ws.editors.insert(file_a.clone(), ed_a);
+        ws.editors.insert(file_a.clone(), EditorInstance::Text(ed_a));
 
-        let mut ed_b = Editor::default();
+        let mut ed_b = TextEditor::default();
         ed_b.append_line("BBBB");
-        ws.editors.insert(file_b.clone(), ed_b);
+        ws.editors.insert(file_b.clone(), EditorInstance::Text(ed_b));
 
         ws.save_all().expect("save_all failed");
 

@@ -13,7 +13,7 @@ use crate::{
 };
 
 #[derive(Default)]
-pub struct Editor {
+pub struct TextEditor {
     lines: Vec<String>,
     modified: bool,
     logging: bool,
@@ -23,7 +23,7 @@ pub struct Editor {
     redo_stack: Vec<Box<dyn DocCommand>>,
 }
 
-impl Editor {
+impl TextEditor {
     // bool类型的默认值是false
     pub fn new() -> Self { Self::default() }
 
@@ -85,7 +85,7 @@ impl Editor {
         if self.lines.is_empty() {
             if line != 1 || col != 1 {
                 return Err(AppError::InvalidArgs(
-                    "empty editor: can only insert at 1:1".into(),
+                    "empty TextEditor: can only insert at 1:1".into(),
                 ));
             }
             self.lines.push(text.to_string());
@@ -246,8 +246,8 @@ mod tests {
     use crate::commands::doc_command::DocCommand;
     use crate::error::AppResult;
 
-    fn editor_with_lines(lines: &[&str]) -> Editor {
-        let mut ed = Editor::default();
+    fn editor_with_lines(lines: &[&str]) -> TextEditor {
+        let mut ed = TextEditor::default();
         for &l in lines {
             ed.append_line(l);
         }
@@ -256,7 +256,7 @@ mod tests {
 
     #[test]
     fn append_line_and_pop_line() {
-        let mut ed = Editor::default();
+        let mut ed = TextEditor::default();
         assert_eq!(ed.count_lines(), 0);
 
         ed.append_line("l0");
@@ -332,12 +332,12 @@ mod tests {
     }
 
     impl DocCommand for TestAppendCmd {
-        fn execute(&mut self, ed: &mut Editor) -> AppResult<()> {
+        fn execute(&mut self, ed: &mut TextEditor) -> AppResult<()> {
             ed.append_line(&self.text);
             Ok(())
         }
 
-        fn undo(&mut self, ed: &mut Editor) -> AppResult<()> {
+        fn undo(&mut self, ed: &mut TextEditor) -> AppResult<()> {
             ed.pop_line()
         }
     }
@@ -380,7 +380,7 @@ mod tests {
 
     #[test]
     fn undo_redo_on_empty_stack_should_error() {
-        let mut ed = Editor::default();
+        let mut ed = TextEditor::default();
 
         assert!(ed.undo().is_err());
         assert!(ed.redo().is_err());

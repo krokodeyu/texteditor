@@ -1,9 +1,9 @@
 use crate::{
     error::AppResult,
-    editor::Editor,
+    text_editor::TextEditor,
 };
 
 pub trait DocCommand {
-    fn execute(&mut self, ed: &mut Editor) -> AppResult<()>;
-    fn undo(&mut self, ed: &mut Editor) -> AppResult<()>;
+    fn execute(&mut self, ed: &mut TextEditor) -> AppResult<()>;
+    fn undo(&mut self, ed: &mut TextEditor) -> AppResult<()>;
 }

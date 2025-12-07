@@ -2,7 +2,7 @@ use crate::{
     application::Application, 
     outcome::Outcome, 
     error::AppResult,
-    editor::Editor,
+    text_editor::TextEditor,
     commands::doc_command::DocCommand,
 };
 use super::CommandDef;
@@ -19,13 +19,13 @@ impl AppendLineCommand {
 }
 
 impl DocCommand for AppendLineCommand {
-    fn execute(&mut self, ed: &mut Editor) -> AppResult<()> {
+    fn execute(&mut self, ed: &mut TextEditor) -> AppResult<()> {
         self.line_index = ed.count_lines();
-        ed.append_line(&self.text);   // Editor 的“原始操作”
+        ed.append_line(&self.text);   // TextEditor 的“原始操作”
         Ok(())
     }
 
-    fn undo(&mut self, ed: &mut Editor) -> AppResult<()> {
+    fn undo(&mut self, ed: &mut TextEditor) -> AppResult<()> {
         ed.pop_line()
     }
 }
