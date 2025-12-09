@@ -31,6 +31,9 @@ mod redo;
 mod replace;
 mod util;
 pub mod doc_command;
+mod xml_append_child;
+mod xml_delete_element;
+mod xml_tree;
 pub mod xml_command;
 
 // 导出子模块内部的 CommandDef 列表
@@ -52,6 +55,9 @@ use save::SAVE_COMMAND;
 use undo::UNDO_COMMAND;
 use redo::REDO_COMMAND;
 use replace::REPLACE_COMMAND;
+use xml_append_child::APPEND_CHILD_COMMAND;
+use xml_delete_element::DELETE_ELEMENT_COMMAND;
+use xml_tree::XML_TREE_COMMAND;
 
 /// 全局静态命令表
 pub static COMMANDS: &[CommandDef] = &[
@@ -73,4 +79,7 @@ pub static COMMANDS: &[CommandDef] = &[
     UNDO_COMMAND,
     REDO_COMMAND,
     REPLACE_COMMAND,
+    APPEND_CHILD_COMMAND,
+    DELETE_ELEMENT_COMMAND,
+    XML_TREE_COMMAND,
 ];

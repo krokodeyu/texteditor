@@ -177,6 +177,22 @@ impl Workspace {
         Ok(ed.show(s, e))
     }
 
+    pub fn show_xml_tree(&self, p: impl AsRef<Path>) -> AppResult<String> {
+        let path: &Path = p.as_ref();
+        let key: PathBuf = path.to_path_buf();
+
+        if !self.editors.contains_key(&key) {
+            return Err(AppError::InvalidArgs("no such file!".into()));
+        }
+
+        let ed = self.editors
+            .get(&key)
+            .ok_or_else(|| AppError::InternalError("can't access file".into()))?
+            .as_xml()?;
+
+        ed.show_all()
+    }
+
     pub fn list(&self) -> AppResult<String> {
         let mut editor_list: String = String::new();
         for (path, editor) in &self.editors {

@@ -5,13 +5,12 @@ use super::CommandDef;
 
 pub fn cmd_init(app: &mut Application, args: &[String]) -> AppResult<Outcome> {
     // 命令格式：init <text|xml> <file> [with-log]
-    if args.len() < 2 {
+    if args.len() < 2 || args.len() > 3 {
         return Err(AppError::InvalidArgs(
             "usage: init <text|xml> <file> [with-log]".into(),
         ));
     }
 
-    // 1. 解析编辑器类型
     let kind_str = args[0].as_str();
     let kind = match kind_str {
         "text" => EditorKind::Text,

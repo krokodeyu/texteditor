@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root id="root" log="true">
+    <book id="book">
+        <book id="book123"></book>
+    </book>
+    <book2 id="book2">days are gone</book2>
+</root>

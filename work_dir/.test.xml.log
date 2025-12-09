@@ -1,0 +1,21 @@
+session start at 2025-12-07 16:32:28.743529800 +08:00
+2025-12-07 16:32:28 init xml test.xml with-log
+2025-12-07 16:32:51 save all
+2025-12-07 16:32:53 exit
+session start at 2025-12-09 16:53:19.791978200 +08:00
+2025-12-09 16:53:19 init xml test.xml
+session start at 2025-12-09 16:55:31.223403900 +08:00
+2025-12-09 16:55:31 load test.xml
+2025-12-09 16:56:19 append_child book book root 
+2025-12-09 16:56:45 append_child book2 book2 root days are gone
+2025-12-09 16:57:07 append_child book book123 book 
+2025-12-09 16:57:13 save all
+2025-12-09 16:57:15 exit
+session start at 2025-12-09 18:20:45.282205900 +08:00
+2025-12-09 18:20:45 load test.xml
+2025-12-09 18:21:16 delete-element book2
+2025-12-09 18:21:21 undo
+2025-12-09 18:21:33 delete-element book
+2025-12-09 18:21:37 undo
+2025-12-09 18:21:41 redo
+2025-12-09 18:21:46 exit

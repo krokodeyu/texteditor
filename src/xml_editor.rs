@@ -15,6 +15,7 @@ pub struct XmlNode {
     id: NodeId,
     id_attr: String,
     name: String,
+    parent: Option<NodeId>,
     attributes: HashMap<String, String>,
     // text与children字段互斥，需要在相关函数中进行判别。
     text: Option<String>,
@@ -30,11 +31,15 @@ impl XmlNode {
         &self.id_attr
     }
 
-    pub fn name(&self) -> &str {
+    pub fn _name(&self) -> &str {
         &self.name
     }
 
-    pub fn attributes(&self) -> &HashMap<String, String> {
+    pub fn _parent(&self) -> Option<NodeId> {
+        self.parent
+    }
+
+    pub fn _attributes(&self) -> &HashMap<String, String> {
         &self.attributes
     }
 
@@ -42,9 +47,24 @@ impl XmlNode {
         &self.children
     }
 
-    pub fn text(&self) -> Option<&str> {
+    pub fn _text(&self) -> Option<&str> {
         self.text.as_deref()
     }
+}
+
+/// 一棵被删除的子树（所有节点都从 XmlEditor 中移除了）
+/// nodes 里放的是所有节点，root_id 是这棵树的根。
+#[derive(Debug, Clone)]
+pub struct DeletedSubtree {
+    pub root_id: NodeId,
+    pub nodes: Vec<XmlNode>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DeletedNodeToken {
+    pub parent_id: NodeId,
+    pub index: usize,
+    pub subtree: DeletedSubtree,
 }
 
 /// 先做一个最简单的 XML 编辑器骨架：只保存原始字符串。
@@ -84,6 +104,7 @@ impl XmlEditor {
             id: root_id,
             id_attr: "root".into(),
             name: "root".into(),
+            parent: None,
             attributes: attrs,
             children: Vec::new(),
             text: None,
@@ -167,11 +188,168 @@ impl XmlEditor {
         self.to_string()
     }
 
-    /// 目前先不支持按行范围 show，后面可以按行拆分。
-    pub fn show_range(&self, _start: usize, _end: usize) -> AppResult<String> {
-        Err(AppError::InvalidArgs(
-            "xml show <start> <end> not implemented yet".into(),
-        ))
+    pub fn append_child(
+        &mut self,
+        tag_name: &String, 
+        child_id: &String, 
+        parent_id: &String, 
+        text: Option<&String>
+    ) -> AppResult<()>{
+        // 找到父节点
+        let parent_id: NodeId = self.find_by_attr_id(parent_id)?;
+        // 借用问题：现在对parent进行不可变借用，需要及时终止借用值的生命周期。
+        {
+            let parent: &XmlNode = self.get_node(parent_id)?;
+            if parent.text.is_some() {
+                Err(AppError::InvalidArgs("父节点存在文本，无法插入".into()))?
+            }
+        }
+        if self.has_attr_id(child_id) {
+            Err(AppError::InvalidArgs(format!("id已存在：{}", child_id.clone()).into()))?
+        }
+        let child_text = match text {
+            Some(t) => Some(t.clone()),
+            None => None,
+        };
+        let new_id = self.alloc_id();
+        let child: XmlNode = XmlNode {
+            id: new_id,
+            attributes: HashMap::new(),
+            id_attr: child_id.clone(),
+            name: tag_name.clone(),
+            parent: Some(parent_id),
+            text: child_text,
+            children: Vec::new(),
+        };
+
+        // 登记子节点。
+        self.nodes.insert(new_id, child);
+        self.id_index.insert(child_id.clone(), new_id);
+
+        let mut_parent = self.get_node_mut(parent_id)?;
+        mut_parent.children.push(new_id);
+
+        self.modified = true;
+        
+        Ok(())
+    }
+
+    pub fn delete_node(&mut self, attr_id: &String ) -> AppResult<DeletedNodeToken>{
+        let id = self.find_by_attr_id(attr_id)?;
+        let token = self.delete_node_by_id(id)?;
+        self.modified = true;
+        Ok(token)
+    }
+
+    pub fn restore_node(&mut self, token: DeletedNodeToken) -> AppResult<()> {
+        let DeletedNodeToken {
+            parent_id,
+            index,
+            subtree,
+        } = token;
+
+        let root_id = subtree.root_id;
+
+        // 1. nodes / id_index 中恢复整棵子树
+        self.restore_subtree(subtree)?;
+
+        // 2. 把 root 节点重新挂回父节点 children
+        {
+            let parent = self.get_node_mut(parent_id)?;
+            parent.children.insert(index, root_id);
+        }
+
+        self.modified = true;
+        Ok(())
+    }
+
+    fn delete_node_by_id(&mut self, id: NodeId) -> AppResult<DeletedNodeToken>{
+        if id == self.root {
+            return Err(AppError::InvalidArgs("不能删除根元素".into()));
+        }
+
+        // 找 parent
+        let parent_id = self.nodes[&id].parent.unwrap();
+
+        // 找在 parent 中的下标
+        let index = self.nodes[&parent_id]
+            .children
+            .iter()
+            .position(|&c| c == id)
+            .unwrap();
+
+        // 从父节点删除 child
+        self.nodes.get_mut(&parent_id).unwrap().children.remove(index);
+
+        // 删除子树
+        let subtree = self.remove_subtree(id)?;
+
+        Ok(DeletedNodeToken {
+            parent_id,
+            index,
+            subtree,
+        })
+    }
+
+    /// 要求：父节点的 children 已经提前删除 child_id。
+    fn remove_subtree(&mut self, root_id: NodeId) -> AppResult<DeletedSubtree> {
+        let mut stack = Vec::new();
+        let mut collected = Vec::new();
+
+        stack.push(root_id);
+
+        while let Some(id) = stack.pop() {
+            // 从 nodes 中拿出这个节点
+            let node = self.nodes.remove(&id).ok_or_else(|| {
+                AppError::InternalError(format!("remove_subtree: node {} missing", id))
+            })?;
+
+            // 删除 id_attr 映射
+            self.id_index.remove(node.id_attr());
+
+            // 把所有子节点 id 入栈，递归删除
+            for &child_id in node.children().iter() {
+                stack.push(child_id);
+            }
+
+            collected.push(node);
+        }
+
+        Ok(DeletedSubtree {
+            root_id,
+            nodes: collected,
+        })
+    }
+
+    fn restore_subtree(&mut self, subtree: DeletedSubtree) -> AppResult<()> {
+        for node in subtree.nodes {
+            let id = node.id();
+            if self.nodes.contains_key(&id) {
+                return Err(AppError::InternalError(
+                    format!("restore_subtree: node id {} already exists", id),
+                ));
+            }
+
+            // 恢复 id_index 映射
+            self.id_index
+                .insert(node.id_attr().to_string(), id);
+
+            // 恢复节点本身
+            self.nodes.insert(id, node);
+        }
+
+        Ok(())
+    }
+
+    fn find_by_attr_id(&self, attr_id: &str) -> AppResult<NodeId> {
+        self.id_index
+            .get(attr_id)
+            .copied()
+            .ok_or_else(|| AppError::InvalidArgs(format!("目标元素不存在: {}", attr_id)))
+    }
+
+    fn has_attr_id(&self, attr_id: &str) -> bool {
+        self.id_index.contains_key(attr_id)
     }
 
     /// 辅助函数：从str解析一个DOM Tree。
@@ -197,7 +375,7 @@ impl XmlEditor {
         let s = s.trim_start();
         let mut pos = 0usize;
 
-        let root_id = ed.parse_element(s, &mut pos)?;
+        let root_id = ed.parse_element(s, &mut pos, None)?;
 
         // 4. 检查后面是否只有空白
         if s[pos..].trim().len() != 0 {
@@ -220,7 +398,8 @@ impl XmlEditor {
         Ok(ed)
     }
 
-    fn parse_element(&mut self, s: &str, pos: &mut usize) -> AppResult<NodeId> {
+    /// 辅助函数：解析一个XML元素
+    fn parse_element(&mut self, s: &str, pos: &mut usize, parent: Option<NodeId>) -> AppResult<NodeId> {
         Self::skip_ws(s, pos);
 
         // 必须是 '<'
@@ -259,12 +438,12 @@ impl XmlEditor {
             Self::skip_ws(s, pos);
             Self::expect_char(s, pos, '>')?;
 
-            let id = self.new_node(&name, attrs, None)?;
+            let id = self.new_node(&name, attrs, None, parent)?;
             Ok(id)
         }
         // 情况二：子元素（以 '<' 开头且不是 </）
         else if Self::starts_with(s, *pos, "<") {
-            let id = self.new_node(&name, attrs, None)?;
+            let id = self.new_node(&name, attrs, None, parent)?;
 
             loop {
                 Self::skip_ws(s, pos);
@@ -283,7 +462,7 @@ impl XmlEditor {
                     break;
                 } else {
                     // 子元素
-                    let child_id = self.parse_element(s, pos)?;
+                    let child_id = self.parse_element(s, pos, Some(id))?;
                     self.get_node_mut(id)?.children.push(child_id);
                 }
             }
@@ -310,16 +489,18 @@ impl XmlEditor {
             Self::skip_ws(s, pos);
             Self::expect_char(s, pos, '>')?;
 
-            let id = self.new_node(&name, attrs, Some(text))?;
+            let id = self.new_node(&name, attrs, Some(text), parent)?;
             Ok(id)
         }
     }
 
+    ///创建新结点
     fn new_node(
         &mut self,
         name: &str,
         mut attributes: HashMap<String, String>,
         text: Option<String>,
+        parent: Option<NodeId>,
     ) -> AppResult<NodeId> {
         // 每个元素必须有唯一 id 属性（字符串 id_attr）
         let id_attr = attributes
@@ -339,6 +520,7 @@ impl XmlEditor {
             id,
             id_attr: id_attr.clone(),
             name: name.to_string(),
+            parent,
             attributes,
             children: Vec::new(),
             text,
@@ -350,10 +532,15 @@ impl XmlEditor {
         Ok(id)
     }
 
+    /// 按每次+1分配内部id，后续可以修改为别的逻辑。
     fn alloc_id(&mut self) -> NodeId {
         let id = self.next_id;
         self.next_id += 1;
         id
+    }
+
+    fn get_node(&self, id: NodeId) -> AppResult<&XmlNode> {
+        self.nodes.get(&id).ok_or_else(|| AppError::InvalidArgs("xml node id not found".into()))
     }
 
     fn get_node_mut(&mut self, id: NodeId) -> AppResult<&mut XmlNode> {
