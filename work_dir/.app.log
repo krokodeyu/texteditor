@@ -9,3 +9,5 @@
 [error:1002] 2025-12-11 17:51:51.907059100 +08:00 Invalid arguments: usage: xml-tree <file>
 [error:1002] 2025-12-11 17:54:35.895231900 +08:00 Invalid arguments: current editor is not an XML file
 [error:1002] 2025-12-11 17:56:58.328106900 +08:00 Invalid arguments: usage: append-child <tag-name> <child-id> <parent-id> [text]
+[error:1001] 2025-12-11 21:32:04.816709600 +08:00 Unknown command: change-text
+[error:1002] 2025-12-11 21:32:27.745535100 +08:00 Invalid arguments: new id already exists!

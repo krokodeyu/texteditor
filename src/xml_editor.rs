@@ -75,12 +75,24 @@ impl XmlNode {
         &self.children
     }
 
-    pub fn _text(&self) -> Option<&str> {
-        self.text.as_deref()
+    pub fn text(&self) -> Option<&String> {
+        self.text.as_ref()
     }
 
     pub fn set_attr_id(&mut self, new_attr_id: &String) {
         self.id_attr = new_attr_id.clone()
+    }
+
+    pub fn set_text(&mut self, new_text: &String) {
+        self.text = Some(new_text.clone());
+    }
+
+    pub fn remove_text(&mut self) {
+        self.text = None;
+    }
+
+    pub fn has_child(&self) -> bool{
+        !self.children.is_empty()
     }
 
     pub fn insert_child_before(&mut self, child_id: NodeId, target_id: NodeId) {
@@ -233,7 +245,11 @@ impl XmlEditor {
     }
 
     /// 更改节点的attr_id
-    pub fn change_attr_id(&mut self, old_attr_id: &String, new_attr_id: &String) -> AppResult<()> {
+    pub fn change_attr_id(
+        &mut self, 
+        old_attr_id: &String, 
+        new_attr_id: &String
+    ) -> AppResult<()> {
         if self.has_attr_id(new_attr_id) {
             Err(AppError::InvalidArgs("new id already exists!".into()))?
         }
@@ -242,12 +258,56 @@ impl XmlEditor {
             Err(AppError::InvalidArgs(format!("node with id {} doesn't exist!", old_attr_id)))?
         }
 
-        let old_id: NodeId = self.find_by_attr_id(old_attr_id)?;
-        let node: &mut XmlNode = self.get_node_mut(old_id)?;
+        let id: NodeId = self.find_by_attr_id(old_attr_id)?;
+        let node: &mut XmlNode = self.get_node_mut(id)?;
 
+        // 更新节点attr_id
         node.set_attr_id(new_attr_id);
+        // 更新节点注册表
+        if let Some(v) = self.id_index.remove(old_attr_id) {
+            self.id_index.insert(new_attr_id.clone(), v);
+        } else {
+            Err(AppError::InternalError(
+                format!("can't find old attr_id: {}", old_attr_id.clone())
+            ))?
+        }
+
+        self.modified = true;
 
         Ok(())
+    }
+
+    pub fn remove_text(
+        &mut self, 
+        attr_id: &String
+    ) -> AppResult<()>{
+        let id: NodeId = self.find_by_attr_id(attr_id)?;
+        let node: &mut XmlNode = self.get_node_mut(id)?;
+        
+        node.remove_text();
+
+        Ok(())
+    }
+
+
+    /// 更改指定元素文本，并返回旧文本。
+    pub fn change_text(
+        &mut self, 
+        attr_id: &String, 
+        new_text: &String
+    ) -> AppResult<Option<String>>{
+        let id: NodeId = self.find_by_attr_id(attr_id)?;
+        let node: &mut XmlNode = self.get_node_mut(id)?;
+
+        if node.has_child() {
+            Err(AppError::InvalidArgs("target node has child!".into()))?
+        }
+
+        let old_text: Option<String> = node.text().cloned();
+        node.set_text(new_text);
+        self.modified = true;
+
+        Ok(old_text)
     }
 
     /// 在指定节点前插入兄弟节点

@@ -34,6 +34,7 @@ pub mod doc_command;
 mod xml_append_child;
 mod xml_delete_element;
 mod xml_edit_id;
+mod xml_edit_text;
 mod xml_insert_before;
 mod xml_tree;
 pub mod xml_command;
@@ -60,6 +61,7 @@ use replace::REPLACE_COMMAND;
 use xml_append_child::APPEND_CHILD_COMMAND;
 use xml_delete_element::DELETE_ELEMENT_COMMAND;
 use xml_edit_id::EDIT_ID_COMMAND;
+use xml_edit_text::EDIT_TEXT_COMMAND;
 use xml_insert_before::INSERT_BEFORE_COMMAND;
 use xml_tree::XML_TREE_COMMAND;
 
@@ -86,6 +88,7 @@ pub static COMMANDS: &[CommandDef] = &[
     APPEND_CHILD_COMMAND,
     DELETE_ELEMENT_COMMAND,
     EDIT_ID_COMMAND,
+    EDIT_TEXT_COMMAND,
     INSERT_BEFORE_COMMAND,
     XML_TREE_COMMAND,
 ];
