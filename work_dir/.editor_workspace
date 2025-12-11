@@ -1,9 +1,14 @@
 {
   "open_files": {
     "work_dir\\test.xml": {
-      "modified": true,
+      "modified": false,
       "logging": true,
       "kind": "Xml"
+    },
+    "work_dir\\test.xm": {
+      "modified": false,
+      "logging": false,
+      "kind": "Text"
     }
   },
   "active": "work_dir\\test.xml"

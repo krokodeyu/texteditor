@@ -23,6 +23,34 @@ pub struct XmlNode {
 }
 
 impl XmlNode {
+    pub fn new(
+        id: NodeId,
+        id_attr: &String,
+        name: &String,
+        parent: Option<NodeId>,
+        text: Option<&String>
+    ) -> Self {
+        Self {
+            id: id,
+            attributes: HashMap::new(),
+            id_attr: id_attr.clone(),
+            name: name.clone(),
+            parent: parent,
+            text: text.cloned(),
+            children: Vec::new(),
+        }
+    }
+
+    // let child: XmlNode = XmlNode {
+    //         id: new_id,
+    //         attributes: HashMap::new(),
+    //         id_attr: child_id.clone(),
+    //         name: tag_name.clone(),
+    //         parent: Some(parent_id),
+    //         text: child_text,
+    //         children: Vec::new(),
+    //     };
+
     pub fn id(&self) -> NodeId {
         self.id
     }
@@ -35,7 +63,7 @@ impl XmlNode {
         &self.name
     }
 
-    pub fn _parent(&self) -> Option<NodeId> {
+    pub fn parent(&self) -> Option<NodeId> {
         self.parent
     }
 
@@ -49,6 +77,22 @@ impl XmlNode {
 
     pub fn _text(&self) -> Option<&str> {
         self.text.as_deref()
+    }
+
+    pub fn set_attr_id(&mut self, new_attr_id: &String) {
+        self.id_attr = new_attr_id.clone()
+    }
+
+    pub fn insert_child_before(&mut self, child_id: NodeId, target_id: NodeId) {
+        if let Some(pos) = self.children.iter().position(|&x| x == target_id) {
+            self.children.insert(pos, child_id);
+        } else {
+            self.children.push(child_id);
+        }
+    }
+
+    pub fn insert_child(&mut self, child_id: NodeId) {
+        self.children.push(child_id);
     }
 }
 
@@ -188,6 +232,67 @@ impl XmlEditor {
         self.to_string()
     }
 
+    /// 更改节点的attr_id
+    pub fn change_attr_id(&mut self, old_attr_id: &String, new_attr_id: &String) -> AppResult<()> {
+        if self.has_attr_id(new_attr_id) {
+            Err(AppError::InvalidArgs("new id already exists!".into()))?
+        }
+
+        if !self.has_attr_id(old_attr_id) {
+            Err(AppError::InvalidArgs(format!("node with id {} doesn't exist!", old_attr_id)))?
+        }
+
+        let old_id: NodeId = self.find_by_attr_id(old_attr_id)?;
+        let node: &mut XmlNode = self.get_node_mut(old_id)?;
+
+        node.set_attr_id(new_attr_id);
+
+        Ok(())
+    }
+
+    /// 在指定节点前插入兄弟节点
+    pub fn insert_before(
+        &mut self,
+        tag_name: &String, 
+        new_attr_id: &String, 
+        target_attr_id: &String, 
+        text: Option<&String>
+    ) -> AppResult<()> {
+        if self.has_attr_id(new_attr_id) {
+            Err(AppError::InvalidArgs("id already exists!".into()))?
+        }
+        
+        // 寻找目标
+        let target_id: NodeId = self.find_by_attr_id(target_attr_id)?;
+        let target: &XmlNode = self.get_node(target_id)?;
+
+        
+        let parent_id: NodeId = target
+            .parent()
+            .ok_or_else(|| AppError::InvalidArgs("target node doesn't have a parent!".into()))?; 
+        // 创造新结点
+        let new_id = self.alloc_id();
+        let new_node: XmlNode = XmlNode::new(
+            new_id, 
+            new_attr_id,
+            tag_name,
+            Some(parent_id),
+            text,
+        );
+
+        self.id_index.insert(new_attr_id.clone(), new_id);
+        self.nodes.insert(new_id, new_node);
+        
+        let parent: &mut XmlNode = self.get_node_mut(parent_id)?;
+
+        parent.insert_child_before(new_id, target_id);
+
+        self.modified = true;
+
+        Ok(())
+    }
+
+    /// 在指定节点下插入子节点
     pub fn append_child(
         &mut self,
         tag_name: &String, 
@@ -207,33 +312,28 @@ impl XmlEditor {
         if self.has_attr_id(child_id) {
             Err(AppError::InvalidArgs(format!("id已存在：{}", child_id.clone()).into()))?
         }
-        let child_text = match text {
-            Some(t) => Some(t.clone()),
-            None => None,
-        };
         let new_id = self.alloc_id();
-        let child: XmlNode = XmlNode {
-            id: new_id,
-            attributes: HashMap::new(),
-            id_attr: child_id.clone(),
-            name: tag_name.clone(),
-            parent: Some(parent_id),
-            text: child_text,
-            children: Vec::new(),
-        };
+        let child: XmlNode = XmlNode::new(
+            new_id, 
+            child_id, 
+            tag_name, 
+            Some(parent_id), 
+            text,
+        );
 
         // 登记子节点。
         self.nodes.insert(new_id, child);
         self.id_index.insert(child_id.clone(), new_id);
 
         let mut_parent = self.get_node_mut(parent_id)?;
-        mut_parent.children.push(new_id);
+        mut_parent.insert_child(new_id);
 
         self.modified = true;
         
         Ok(())
     }
 
+    /// 根据attr_id删除节点
     pub fn delete_node(&mut self, attr_id: &String ) -> AppResult<DeletedNodeToken>{
         let id = self.find_by_attr_id(attr_id)?;
         let token = self.delete_node_by_id(id)?;

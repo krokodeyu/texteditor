@@ -19,3 +19,23 @@ session start at 2025-12-09 18:20:45.282205900 +08:00
 2025-12-09 18:21:37 undo
 2025-12-09 18:21:41 redo
 2025-12-09 18:21:46 exit
+session start at 2025-12-11 17:49:35.656997500 +08:00
+2025-12-11 17:49:35 load test.xml
+2025-12-11 17:50:25 append_child newbook newbook book123 my life is great
+2025-12-11 17:51:13 exit
+session start at 2025-12-11 17:51:46.084667300 +08:00
+2025-12-11 17:51:46 load test.xml
+2025-12-11 17:52:23 append_child asodi asodi book123 
+2025-12-11 17:52:30 exit
+session start at 2025-12-11 17:54:41.552659700 +08:00
+2025-12-11 17:54:41 load test.xml
+2025-12-11 17:54:42 append_child ioasf jiawd book123 asfn
+2025-12-11 17:57:12 append_child 123321 321123 book 
+2025-12-11 18:01:20 exit
+session start at 2025-12-11 18:03:23.873894300 +08:00
+2025-12-11 18:03:23 load test.xml
+2025-12-11 18:03:52 insert_before new_book new book123 life is beautiful.
+2025-12-11 18:04:03 undo
+2025-12-11 18:04:07 redo
+2025-12-11 18:04:12 save all
+2025-12-11 18:04:13 exit

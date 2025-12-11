@@ -239,6 +239,16 @@ impl Workspace {
             .map(|editor| editor.is_modified())  // 提取 modified 字段
     }
 
+    pub fn check_modified(&self) -> bool {
+        // for (_, ed) in &self.editors {
+        //     if ed.is_modified() {
+        //         return true;
+        //     }
+        // }
+        // false
+        self.editors.values().any(|ed| ed.is_modified())
+    }
+
     pub fn from_memento(&mut self, m: WorkspaceMemento) -> AppResult<()> {
         self.editors.clear();
         self.active = None;

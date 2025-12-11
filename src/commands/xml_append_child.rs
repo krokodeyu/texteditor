@@ -33,7 +33,7 @@ pub fn command_append_child(app: &mut Application, args: &[String]) -> AppResult
         ));
     }
     let tag_name: String = args[0].clone();
-    let child_id: String = args[1].clone();
+    let child_id: String = args[1].clone(); 
     let parent_id: String = args[2].clone();
     let text: Option<String> = args.get(3).cloned();
 

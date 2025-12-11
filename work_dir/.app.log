@@ -5,3 +5,7 @@
 [error:1002] 2025-12-09 18:20:47.291755100 +08:00 Invalid arguments: not a text editor
 [error:1002] 2025-12-09 18:20:53.544057400 +08:00 Invalid arguments: usage: xml-tree <file>
 [error:1002] 2025-12-09 18:21:43.960595300 +08:00 Invalid arguments: nothing to redo
+[error:1002] 2025-12-11 17:49:52.222742 +08:00 Invalid arguments: insert-before <tagName> <newId> <targetId> ["text"]
+[error:1002] 2025-12-11 17:51:51.907059100 +08:00 Invalid arguments: usage: xml-tree <file>
+[error:1002] 2025-12-11 17:54:35.895231900 +08:00 Invalid arguments: current editor is not an XML file
+[error:1002] 2025-12-11 17:56:58.328106900 +08:00 Invalid arguments: usage: append-child <tag-name> <child-id> <parent-id> [text]

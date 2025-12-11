@@ -33,6 +33,8 @@ mod util;
 pub mod doc_command;
 mod xml_append_child;
 mod xml_delete_element;
+mod xml_edit_id;
+mod xml_insert_before;
 mod xml_tree;
 pub mod xml_command;
 
@@ -57,6 +59,8 @@ use redo::REDO_COMMAND;
 use replace::REPLACE_COMMAND;
 use xml_append_child::APPEND_CHILD_COMMAND;
 use xml_delete_element::DELETE_ELEMENT_COMMAND;
+use xml_edit_id::EDIT_ID_COMMAND;
+use xml_insert_before::INSERT_BEFORE_COMMAND;
 use xml_tree::XML_TREE_COMMAND;
 
 /// 全局静态命令表
@@ -81,5 +85,7 @@ pub static COMMANDS: &[CommandDef] = &[
     REPLACE_COMMAND,
     APPEND_CHILD_COMMAND,
     DELETE_ELEMENT_COMMAND,
+    EDIT_ID_COMMAND,
+    INSERT_BEFORE_COMMAND,
     XML_TREE_COMMAND,
 ];

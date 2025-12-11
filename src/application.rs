@@ -67,6 +67,13 @@ impl Application {
                         });
                     }
                     if outcome.exit { 
+                        if self.workspace.check_modified() {
+                            // 询问用户是否保存
+                            if !self.confirm_exit_and_maybe_save()? {
+                                // 用户选择取消退出（比如按了 c），继续下一轮循环
+                                continue;
+                            }
+                        }
                         if let Err(e) = self.save_workspace_memento() {
                             eprintln!("[warn] failed to save workspace: {}", e);
                         }
@@ -95,6 +102,54 @@ impl Application {
                 code: e.code(), 
                 message: e.to_string() 
             });
+    }
+
+    /// 在退出前检查是否有未保存修改，询问用户是否保存。
+    /// 返回 Ok(true) 表示可以退出，Ok(false) 表示取消退出。
+    fn confirm_exit_and_maybe_save(&mut self) -> AppResult<bool> {
+        // 没有未保存修改，直接退出
+        if !self.workspace.check_modified() {
+            return Ok(true);
+        }
+
+        println!("[warn] unsave change detected.");
+        println!("choose one:");
+        println!("  s) save and exit.");
+        println!("  d) discard and exit.");
+        println!("  c) cancel.");
+
+        loop {
+            print!("请输入选择 (s/d/c) > ");
+            io::stdout().flush().ok();
+
+            let mut line = String::new();
+            if io::stdin().read_line(&mut line).is_err() {
+                // 读输入失败时，谨慎起见当作取消退出
+                return Ok(false);
+            }
+
+            match line.trim().to_lowercase().as_str() {
+                "s" | "save" => {
+                    if let Err(e) = self.workspace.save_all() {
+                        eprintln!("[error] 保存文件时出错: {}", e);
+                        // 出错时不给你强行退出，返回 false 让你自己决定
+                        return Ok(false);
+                    }
+                    return Ok(true);
+                }
+                "d" | "discard" => {
+                    // 不保存，直接退出
+                    return Ok(true);
+                }
+                "c" | "cancel" | "" => {
+                    // 取消退出
+                    return Ok(false);
+                }
+                _ => {
+                    println!("无效输入，请输入 s(保存)/d(不保存)/c(取消)。");
+                }
+            }
+        }
     }
 }
 
