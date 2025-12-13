@@ -1,16 +1,16 @@
+mod commands;
 mod application;
-// mod command;
 mod editor_instance;
+mod error;
 mod text_editor;
 mod xml_editor;
-mod error;
 mod event;
 mod logging;
 mod outcome;
 mod persist;
 mod router;
+mod timer;
 mod workspace;
-mod commands;
 
 use crate::application::Application;
 use crate::error::AppResult;

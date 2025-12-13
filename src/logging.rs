@@ -43,7 +43,9 @@ impl Subscriber for Logger {
                     if write_header {
                         let _ = writeln!(f, "session start at {}", Local::now());
                     }
-                    let _ = writeln!(f, "{} {}", Local::now().format("%Y-%m-%d %H:%M:%S"), cmd);
+                    if !cmd.is_empty() {
+                        let _ = writeln!(f, "{} {}", Local::now().format("%Y-%m-%d %H:%M:%S"), cmd);
+                    }
                 }
             }
             Event::Error { code, message } => {

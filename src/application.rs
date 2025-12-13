@@ -1,7 +1,9 @@
 //! 入口层：负责交互循环、命令分发与事件发布。
 use std::{
     io::{self, Write},
-    path::{PathBuf, Path}
+    path::{PathBuf, Path},
+    sync::{Arc, Mutex},
+    collections::HashMap,
 };
 use crate::{
     error::{AppResult, AppError}, 
@@ -9,20 +11,27 @@ use crate::{
     logging::Logger, 
     persist::WorkspaceMemento, 
     router::Router, 
-    workspace::Workspace
+    workspace::Workspace,
+    timer::{EditTimeTracker, SharedEditTimes},
 };
 
 pub struct Application {
     pub router: Router,
     pub workspace: Workspace,
     pub bus: EventBus,
+    pub edit_times: SharedEditTimes,
 }
 
 impl Application {
     pub fn new() -> AppResult<Self> {
         let mut workspace = Workspace::default();
+        // 初始化日志订阅
         let mut bus = EventBus::new();
         bus.subscribe(Box::new(Logger::new(workspace.get_base_dir())));
+
+        // 编辑时长共享表 + 订阅者
+        let edit_times: SharedEditTimes = Arc::new(Mutex::new(HashMap::new()));
+        bus.subscribe(Box::new(EditTimeTracker::new(edit_times.clone())));
 
         let path = Path::new(".editor_workspace");
         if path.exists() {
@@ -32,7 +41,7 @@ impl Application {
             }
         }
 
-        Ok(Self { router: Router::new(), workspace, bus })
+        Ok(Self { router: Router::new(), workspace, bus, edit_times })
     }
 
     pub fn run(&mut self) -> AppResult<()> {
@@ -45,6 +54,9 @@ impl Application {
 
             let line = line_buf.trim();
             if line.is_empty() { continue; }
+
+            // 命令执行前的活跃文件。
+            let before_file = self.workspace.active_file_path();
 
             // —— 第一步：只用 &self.router 解析，拿到 handler 和 args —— //
             let (handler, args)
@@ -59,13 +71,23 @@ impl Application {
             // —— 第二步：前一个不可变借用已结束；现在再可变借用 self 执行 —— //
             match handler(self, &args) {
                 Ok(outcome) => {
+                    // 命令执行后的活跃文件。
+                    let after_file = self.workspace.active_file_path();
                     if let Some(p) = outcome.print { println!("{p}"); }
-                    if let Some(cmd) = outcome.log {
+                    let cmd_to_log = outcome.log.unwrap_or_else(|| line.to_string());
+                    self.bus.publish(Event::Command {
+                        file: self.workspace.active_file_path(),
+                        cmd: cmd_to_log,
+                    });
+
+                    // 如果命令执行导致编辑器切换，发出信号。
+                    if before_file != after_file {
                         self.bus.publish(Event::Command {
-                            file: self.workspace.active_file_path(),
-                            cmd
+                            file: after_file.clone(),
+                            cmd: "".into(), // 发出空串，避免log.
                         });
                     }
+
                     if outcome.exit { 
                         if self.workspace.check_modified() {
                             // 询问用户是否保存
@@ -83,6 +105,11 @@ impl Application {
                 Err(e) => { self.publish_error(e); }
             }
         }
+        // 退出前补发一条命令事件，用于让计时器结算最后一段时间（例如 EOF 直接退出的情况）
+        self.bus.publish(Event::Command {
+            file: self.workspace.active_file_path(),
+            cmd: "__session_end__".into(),
+        });
         Ok(())
     }
 
@@ -196,6 +223,10 @@ mod tests {
         let shared_events: Arc<Mutex<Vec<Event>>> = Arc::new(Mutex::new(Vec::new()));
         bus.subscribe(Box::new(RecordingSubscriber::new(shared_events.clone())));
 
+        // 编辑时长共享表 + 订阅者
+        let edit_times: SharedEditTimes = Arc::new(Mutex::new(HashMap::new()));
+        bus.subscribe(Box::new(EditTimeTracker::new(edit_times.clone())));
+
         // Router：正常初始化
         let router = Router::new();
 
@@ -203,6 +234,7 @@ mod tests {
             router,
             workspace,
             bus,
+            edit_times,
         };
 
         Ok((app, shared_events, tmp))

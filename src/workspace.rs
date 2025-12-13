@@ -1,11 +1,11 @@
 //! 工作区
 //! 管理多文件上下文、状态持久化。
-
 use std::{
     collections::HashMap,
     collections::hash_map::Entry,
     fs, 
     io,
+    time::Duration,
     path::{Path, PathBuf},
     fmt::Write,
 };
@@ -193,14 +193,22 @@ impl Workspace {
         ed.show_all()
     }
 
-    pub fn list(&self) -> AppResult<String> {
+    pub fn editor_list(
+        &self,
+        times: Option<&std::collections::HashMap<PathBuf, Duration>>,
+    ) -> AppResult<String> {
         let mut editor_list: String = String::new();
         for (path, editor) in &self.editors {
             let is_active: bool = self.is_active_equal_to(path);
             let modified: bool = editor.is_modified();
-            let line = Self::write_editor(path, is_active, modified);
+            let dur = times.and_then(|m| m.get(path));
+            let line = Self::write_editor(path, is_active, modified, dur);
             let _ = writeln!(&mut editor_list, "{}", line);
         }
+        if editor_list.is_empty() {
+            let _ = writeln!(&mut editor_list, "(empty)");
+        }
+
         Ok(editor_list)
     }
 
@@ -403,21 +411,54 @@ impl Workspace {
             .map_or(false, |active_path| active_path == borrowed_path.as_path())
     }
 
-    fn write_editor(p: impl AsRef<Path>, is_active: bool, modified: bool) -> String {
+    fn write_editor(
+        p: impl AsRef<Path>,
+        is_active: bool,
+        modified: bool,
+        dur: Option<&Duration>,
+    ) -> String {
         let mut line: String = String::new();
         if is_active {
             line.push_str("* ");
         } else {
             line.push_str("  ");
         }
-        let p_str: &str = p.as_ref()
+        let p_str: &str = p
+            .as_ref()
             .to_str()
             .expect("can't parse path");
         line.push_str(p_str);
         if modified {
             line.push_str(" [modified]");
         }
+        if let Some(d) = dur {
+            use std::fmt::Write as _;
+            let human = Self::format_duration_cn(d);
+            let _ = write!(line, " ({})", human);
+        }
         line
+    }
+
+    fn format_duration_cn(dur: &std::time::Duration) -> String {
+        let secs = dur.as_secs();
+        let h = secs / 3600;
+        let m = (secs % 3600) / 60;
+        let s = secs % 60;
+
+        let mut s_out = String::new();
+
+        if h > 0 {
+            let _ = write!(s_out, "{}h", h);
+        }
+        if m > 0 {
+            let _ = write!(s_out, "{}m", m);
+        }
+        // 如果有小时/分钟就只在 s>0 时加秒；如果前面都为 0，就至少显示秒
+        if s > 0 || s_out.is_empty() {
+            let _ = write!(s_out, "{}s", s);
+        }
+
+        s_out
     }
 
     fn create_editor_for_path(path: &Path, content: &str) -> AppResult<EditorInstance> {
