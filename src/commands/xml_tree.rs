@@ -6,15 +6,29 @@ use crate::{
 use std::path::PathBuf;
 use super::CommandDef;
 
-pub fn command_xml_tree(app: &mut Application, args: &[String]) -> AppResult<Outcome>{
-    if args.len() != 1 {
-        return Err(AppError::InvalidArgs(
-            "usage: xml-tree <file>".into(),
-        ));
-    }
-    let raw_path: &str = &args[0];
-    let path: PathBuf= app.workspace.resolve_path(Some(raw_path));
-    let content = app.workspace.show_xml_tree(path)?;
+pub fn command_xml_tree(app: &mut Application, args: &[String]) -> AppResult<Outcome> {
+    let content = match args.len() {
+        0 => {
+            // 不传参数：展示当前活动文件
+            let active = app
+                .workspace
+                .active_file_path()
+                .ok_or_else(|| AppError::InternalError("no active file".into()))?;
+
+            app.workspace.show_xml_tree(active)?
+        }
+        1 => {
+            // 传入参数：展示指定文件
+            let raw_path: &str = &args[0];
+            let path: PathBuf = app.workspace.resolve_path(Some(raw_path));
+            app.workspace.show_xml_tree(path)?
+        }
+        _ => {
+            return Err(AppError::InvalidArgs(
+                "usage: xml-tree [file]".into(),
+            ));
+        }
+    };
 
     Ok(Outcome::print(content))
 }

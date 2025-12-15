@@ -31,6 +31,12 @@ pub fn command_edit_id(app: &mut Application, args: &[String]) -> AppResult<Outc
     }
     let old_id = args[0].clone();
     let new_id = args[1].clone();
+
+    if old_id == "root" {
+        return Err(AppError::InvalidArgs(
+            "can't change root id!".into(),
+        ));
+    }
     
     let cmd: EditIdCommand = EditIdCommand{
         old_id: old_id.clone(), 

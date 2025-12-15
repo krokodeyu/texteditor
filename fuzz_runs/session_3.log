@@ -1,0 +1,254 @@
+# Session 3
+# Work dir: C:\Users\11460\Desktop\文件\课程\大三上——软件设计\Labs\lab1\texteditor\fuzz_runs\run_3
+# Exit code: 0
+# Sleep range: [0.0, 0.25] seconds
+
+## Commands
+> redo
+> init xml 3sj37m/ti6d.xml with-log
+> log-off 3sj37m/ti6d.xml
+> edit 3sj37m/ti6d.xml
+> append-child tuaz5ap q4nigf94zv root "mm 2z8b8l mk390 ydc"
+> dir-tree bxhfheyp.xml
+> log-show 3sj37m/ti6d.xml
+> edit 3sj37m/ti6d.xml
+> show 5 5
+> log-show
+> undo
+> load 3sj37m/ti6d.xml
+> log-show 3sj37m/ti6d.xml
+> append "t5fmx yzge nx"
+> undo
+> load f82dwu.log
+> insert-before ttc l0448rna q4nigf94zv ""
+> edit f82dwu.log
+> spell-check --all
+> editor-list
+> dir-tree
+> log-off
+> log-off 3sj37m/ti6d.xml
+> xml-tree
+> load va26afe/ph3f232.txt
+> edit-id q4nigf94zv zcp37ai
+> nqxw8l l8p6iqus hsxqkmx1 ee1nrly lzo
+> edit 3sj37m/ti6d.xml
+> editor-list
+> undo
+> log-show
+> insert-before tr76y ptwp7l78n1 ptwp7l78n1 "yltj 0 m8xg0r py1"
+> redo
+> log-on
+> log-on
+> edit-id l0448rna ms7q41oo0y
+> log-show f82dwu.log
+> t201nef
+> log-off f82dwu.log
+> spell-check va26afe/ph3f232.txt
+> append "z7ya upuy ddxh acrwsg 9r53xz"
+> init text fe4q.log with-log
+> edit-id ms7q41oo0y l6cwftl8m
+> insert-before to5sq q3fo1f q3fo1f
+> undo
+> log-off va26afe/ph3f232.txt
+> append-child tze bfn7glbfsj ptwp7l78n1
+> edit-text bfn7glbfsj "5l owb9e lo"
+> edit-id q3fo1f xacsb3a1
+> undo
+> load 3sj37m/ti6d.xml
+> delete-element bfn7glbfsj
+> show
+> load fe4q.log
+> edit f82dwu.log
+> init text llfal.txt with-log
+> append "s08"
+> edit va26afe/ph3f232.txt
+> dir-tree
+> undo
+> redo
+> load llfal.txt
+> append-child tjkfmq cg1atx0zs root ""
+> log-show fe4q.log
+> editor-list
+> undo
+> delete-element l6cwftl8m
+> delete-element cg1atx0zs
+> spell-check --all
+> undo
+> editor-list
+> save
+> exit
+
+## STDOUT
+> > Initialized xml editor for 3sj37m/ti6d.xml with log
+> > Switch to work_dir\3sj37m/ti6d.xml
+> > > session start at 2025-12-15 20:21:59.906190900 +08:00
+2025-12-15 20:21:59 init xml 3sj37m/ti6d.xml with-log
+2025-12-15 20:22:00 log-off 3sj37m/ti6d.xml
+2025-12-15 20:22:00 edit 3sj37m/ti6d.xml
+2025-12-15 20:22:00 append_child tuaz5ap q4nigf94zv root mm 2z8b8l mk390 ydc
+
+> Switch to work_dir\3sj37m/ti6d.xml
+> > session start at 2025-12-15 20:21:59.906190900 +08:00
+2025-12-15 20:21:59 init xml 3sj37m/ti6d.xml with-log
+2025-12-15 20:22:00 log-off 3sj37m/ti6d.xml
+2025-12-15 20:22:00 edit 3sj37m/ti6d.xml
+2025-12-15 20:22:00 append_child tuaz5ap q4nigf94zv root mm 2z8b8l mk390 ydc
+2025-12-15 20:22:00 edit 3sj37m/ti6d.xml
+
+> > Loaded 3sj37m/ti6d.xml
+> session start at 2025-12-15 20:21:59.906190900 +08:00
+2025-12-15 20:21:59 init xml 3sj37m/ti6d.xml with-log
+2025-12-15 20:22:00 log-off 3sj37m/ti6d.xml
+2025-12-15 20:22:00 edit 3sj37m/ti6d.xml
+2025-12-15 20:22:00 append_child tuaz5ap q4nigf94zv root mm 2z8b8l mk390 ydc
+2025-12-15 20:22:00 edit 3sj37m/ti6d.xml
+2025-12-15 20:22:01 undo
+2025-12-15 20:22:01 load 3sj37m/ti6d.xml
+
+> > > Loaded f82dwu.log
+> > Switch to work_dir\f82dwu.log
+> 拼写检查结果:
+
+[work_dir\3sj37m/ti6d.xml]
+未发现拼写错误
+
+[work_dir\f82dwu.log]
+未发现拼写错误
+
+> time: 0秒
+time: 2秒
+* work_dir\f82dwu.log (0秒)
+  work_dir\3sj37m/ti6d.xml [modified] (2秒)
+
+> work_dir
+├── .app.log
+├── .f82dwu.log.log
+└── .ti6d.xml.log
+
+> > > > Loaded va26afe/ph3f232.txt
+> > > Switch to work_dir\3sj37m/ti6d.xml
+> time: 1秒
+time: 2秒
+time: 0秒
+  work_dir\f82dwu.log (1秒)
+* work_dir\3sj37m/ti6d.xml [modified] (2秒)
+  work_dir\va26afe/ph3f232.txt (0秒)
+
+> > session start at 2025-12-15 20:21:59.906190900 +08:00
+2025-12-15 20:21:59 init xml 3sj37m/ti6d.xml with-log
+2025-12-15 20:22:00 log-off 3sj37m/ti6d.xml
+2025-12-15 20:22:00 edit 3sj37m/ti6d.xml
+2025-12-15 20:22:00 append_child tuaz5ap q4nigf94zv root mm 2z8b8l mk390 ydc
+2025-12-15 20:22:00 edit 3sj37m/ti6d.xml
+2025-12-15 20:22:01 undo
+2025-12-15 20:22:01 load 3sj37m/ti6d.xml
+2025-12-15 20:22:03 edit 3sj37m/ti6d.xml
+2025-12-15 20:22:03 editor-list
+
+> > > > > > session start at 2025-12-15 20:22:01.929805800 +08:00
+2025-12-15 20:22:01 load f82dwu.log
+2025-12-15 20:22:02 edit f82dwu.log
+2025-12-15 20:22:03 editor-list
+2025-12-15 20:22:03 dir-tree .
+2025-12-15 20:22:03 log-off f82dwu.log
+2025-12-15 20:22:03 log-off 3sj37m/ti6d.xml
+
+> > > > > Initialized text editor for fe4q.log with log
+> > > > > > > > > Loaded 3sj37m/ti6d.xml
+> > > Loaded fe4q.log
+> Switch to work_dir\f82dwu.log
+> Initialized text editor for llfal.txt with log
+> > Switch to work_dir\va26afe/ph3f232.txt
+> work_dir
+├── .app.log
+├── .f82dwu.log.log
+├── .fe4q.log.log
+├── .llfal.txt.log
+├── .ph3f232.txt.log
+└── .ti6d.xml.log
+
+> > > Loaded llfal.txt
+> > session start at 2025-12-15 20:22:05.769708700 +08:00
+2025-12-15 20:22:05 init text fe4q.log with-log
+2025-12-15 20:22:06 log-off va26afe/ph3f232.txt
+2025-12-15 20:22:07 load fe4q.log
+
+> time: 1秒
+time: 0秒
+time: 1秒
+time: 0秒
+time: 4秒
+  work_dir\f82dwu.log (1秒)
+* work_dir\llfal.txt [modified] (0秒)
+  work_dir\fe4q.log (1秒)
+  work_dir\va26afe/ph3f232.txt (0秒)
+  work_dir\3sj37m/ti6d.xml [modified] (4秒)
+
+> > > > 拼写检查结果:
+
+[work_dir\3sj37m/ti6d.xml]
+[warn 3001] Internal error: spell-check unavailable: network: error sending request for url (https://api.languagetool.org/v2/check)
+
+[work_dir\f82dwu.log]
+[warn 3001] Internal error: spell-check unavailable: network: error sending request for url (https://api.languagetool.org/v2/check)
+
+[work_dir\fe4q.log]
+[warn 3001] Internal error: spell-check unavailable: network: error sending request for url (https://api.languagetool.org/v2/check)
+
+[work_dir\llfal.txt]
+未发现拼写错误
+
+[work_dir\va26afe/ph3f232.txt]
+未发现拼写错误
+
+> > time: 1秒
+time: 0秒
+time: 1秒
+time: 0秒
+time: 4秒
+  work_dir\f82dwu.log (1秒)
+* work_dir\llfal.txt [modified] (0秒)
+  work_dir\fe4q.log (1秒)
+  work_dir\va26afe/ph3f232.txt (0秒)
+  work_dir\3sj37m/ti6d.xml [modified] (4秒)
+
+> > Goodbye!
+[warn] unsave change detected.
+choose one:
+  s) save and exit.
+  d) discard and exit.
+  c) cancel.
+请输入选择 (s/d/c) > > 
+
+## STDERR
+[error] Internal error: no active file.
+[error] Invalid arguments: path does not exist: work_dir\bxhfheyp.xml
+[error] Invalid arguments: not a text editor
+[error] Invalid arguments: current editor is not a text file
+[error] Invalid arguments: nothing to undo
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: usage: xml-tree <file>
+[error] Invalid arguments: current editor is not an XML file
+[error] Unknown command: nqxw8l
+[error] Invalid arguments: nothing to undo
+[error] Invalid arguments: 目标元素不存在: ptwp7l78n1
+[error] Invalid arguments: node with id l0448rna doesn't exist!
+[error] Unknown command: t201nef
+[error] Invalid arguments: no such file!
+[error] Invalid arguments: current editor is not a text file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: nothing to undo
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: nothing to undo
+[error] Invalid arguments: 目标元素不存在: bfn7glbfsj
+[error] Invalid arguments: not a text editor
+[error] Invalid arguments: nothing to undo
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: nothing to undo
+[error] IO error: 系统找不到指定的路径。 (os error 3)

@@ -1,0 +1,193 @@
+# Session 2
+# Work dir: C:\Users\11460\Desktop\文件\课程\大三上——软件设计\Labs\lab1\texteditor\fuzz_runs\run_2
+# Exit code: 0
+# Sleep range: [0.0, 0.25] seconds
+
+## Commands
+> dir-tree xkgde6l.md
+> editor-list
+> init xml v2.xml
+> edit v2.xml
+> redo
+> redo
+> insert-before tmn4u7f8r udxogds udxogds
+> log-show v2.xml
+> redo
+> edit-id udxogds 4df8afozo
+> load x.txt
+> editor-list
+> undo
+> redo
+> log-off
+> edit-text root "20 0yj4 d 2x8 zinz ed7"
+> editor-list
+> append-child t76mxt mna1tuozc mna1tuozc
+> save
+> log-off
+> dir-tree 1k2j/rdbpn8n1.md
+> delete-element 4df8afozo
+> log-show
+> dir-tree yofsppo.xml
+> append-child tdfu6 a3xr a3xr "69g88 odkf 9n7l jm"
+> save
+> log-show v2.xml
+> fw dh
+> log-off v2.xml
+> show 1 7
+> edit-id a3xr pzkf
+> edit v2.xml
+> log-off
+> append "dj b3isoj itssq6 r x9ylc 5d"
+> save
+> insert-before tihman1o dct mna1tuozc
+> editor-list
+> xml-tree
+> editor-list
+> load v2.xml
+> 00 edj9 r4ya933l vgl20z
+> show 8
+> r gm1wg3m9 j9 axx2pzn
+> insert-before tat6 ho6nh4xnu ho6nh4xnu "mhor v bqfi5 4q3p"
+> delete-element pzkf
+> edit x.txt
+> log-off x.txt
+> undo
+> spell-check --all
+> undo
+> save v2.xml
+> append "vwa02 qes"
+> edit-id dct 0ks
+> zp5lg bo 0brqp15t
+> insert-before t7kk p9bs1cu p9bs1cu
+> 1mb8izp wmt 9v2w
+> edit-text ho6nh4xnu "91e4v 4 s a 1z n6xk2j"
+> xml-tree
+> show
+> insert-before te7xicay ctqquvqag mna1tuozc "s"
+> save
+> save all
+> log-on x.txt
+> edit v2.xml
+> redo
+> delete-element 0ks
+> append-child tuws25ui 9ficyv5eu ho6nh4xnu "1n lbgo 2vi0eh"
+> init text t1fwnjmn.log with-log
+> dir-tree
+> edit-id ho6nh4xnu einxo
+> editor-list
+> exit
+
+## STDOUT
+> > 
+> Initialized xml editor for v2.xml
+> Switch to work_dir\v2.xml
+> > > > session start at 2025-12-15 20:21:49.922017400 +08:00
+2025-12-15 20:21:49 init xml v2.xml
+2025-12-15 20:21:49 edit v2.xml
+
+> > > Loaded x.txt
+> time: 0秒
+  work_dir\v2.xml [modified] (0秒)
+* work_dir\x.txt
+
+> > > > > time: 0秒
+time: 0秒
+  work_dir\v2.xml [modified] (0秒)
+* work_dir\x.txt (0秒)
+
+> > > > > > session start at 2025-12-15 20:21:50.639278200 +08:00
+2025-12-15 20:21:50 load x.txt
+2025-12-15 20:21:50 editor-list
+2025-12-15 20:21:51 log-off x.txt
+2025-12-15 20:21:51 editor-list
+2025-12-15 20:21:51 save all
+2025-12-15 20:21:51 log-off x.txt
+
+> > > > session start at 2025-12-15 20:21:49.922017400 +08:00
+2025-12-15 20:21:49 init xml v2.xml
+2025-12-15 20:21:49 edit v2.xml
+
+> > > <empty>
+> > Switch to work_dir\v2.xml
+> > > > > time: 1秒
+time: 2秒
+* work_dir\v2.xml (1秒)
+  work_dir\x.txt (2秒)
+
+> > time: 1秒
+time: 2秒
+* work_dir\v2.xml (1秒)
+  work_dir\x.txt (2秒)
+
+> Loaded v2.xml
+> > > > > > Switch to work_dir\x.txt
+> > > 拼写检查结果:
+
+[work_dir\v2.xml]
+未发现拼写错误
+
+[work_dir\x.txt]
+未发现拼写错误
+
+> > > > > > > > > > 1: vwa02 qes
+
+> > > > > Switch to work_dir\v2.xml
+> > > > Initialized text editor for t1fwnjmn.log with log
+> work_dir
+├── .app.log
+├── .t1fwnjmn.log.log
+├── .v2.xml.log
+├── .x.txt.log
+├── v2.xml
+└── x.txt
+
+> > time: 3秒
+time: 5秒
+time: 0秒
+  work_dir\v2.xml (3秒)
+  work_dir\x.txt (5秒)
+* work_dir\t1fwnjmn.log (0秒)
+
+> Goodbye!
+[info] workspace saved to "work_dir\\.editor_workspace"
+
+
+## STDERR
+[error] Invalid arguments: path does not exist: work_dir\xkgde6l.md
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: 目标元素不存在: udxogds
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: node with id udxogds doesn't exist!
+[error] Invalid arguments: nothing to undo
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: path does not exist: work_dir\1k2j/rdbpn8n1.md
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: path does not exist: work_dir\yofsppo.xml
+[error] Invalid arguments: current editor is not an XML file
+[error] Unknown command: fw
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not a text file
+[error] Invalid arguments: 目标元素不存在: mna1tuozc
+[error] Invalid arguments: usage: xml-tree <file>
+[error] Unknown command: 00
+[error] Invalid arguments: not a text editor
+[error] Unknown command: r
+[error] Invalid arguments: 目标元素不存在: ho6nh4xnu
+[error] Invalid arguments: 目标元素不存在: pzkf
+[error] Invalid arguments: nothing to undo
+[error] Invalid arguments: nothing to undo
+[error] Invalid arguments: current editor is not an XML file
+[error] Unknown command: zp5lg
+[error] Invalid arguments: current editor is not an XML file
+[error] Unknown command: 1mb8izp
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: usage: xml-tree <file>
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: no such path
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: 目标元素不存在: 0ks
+[error] Invalid arguments: 目标元素不存在: ho6nh4xnu
+[error] Invalid arguments: current editor is not an XML file

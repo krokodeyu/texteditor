@@ -1,0 +1,228 @@
+# Session 1
+# Work dir: C:\Users\11460\Desktop\文件\课程\大三上——软件设计\Labs\lab1\texteditor\fuzz_runs\run_1
+# Exit code: 0
+# Sleep range: [0.0, 0.25] seconds
+
+## Commands
+> undo
+> spell-check
+> init xml atpb/c0iujvas.xml
+> append-child tn31 uf41u3w root ""
+> edit-text root "xfldk4"
+> load 9heh
+> show 6
+> delete-element uf41u3w
+> undo
+> redo
+> insert-before tt21wmnd te4e5pba te4e5pba "lezi qyhdb9"
+> edit 9heh
+> dir-tree c/v9q.cfg
+> show 1
+> delete-element te4e5pba
+> show 5
+> save
+> dir-tree krg.xml
+> log-on
+> save all
+> insert-before twp28cp fomege4llg fomege4llg
+> log-off atpb/c0iujvas.xml
+> log-show
+> append "pda9p o"
+> log-show atpb/c0iujvas.xml
+> log-on
+> editor-list
+> delete-element fomege4llg
+> redo
+> append-child ta2msfm1d dzaucxwwz root
+> j8pd4oo2 ay8ltra jitt
+> undo
+> append-child t5k9ib3 n4v7yjmoi root ""
+> log-show
+> load v.xml
+> i362p jwsikkpv gfwo b
+> pl l9ssn 03ct6 cy7g3vh
+> dir-tree
+> log-on
+> log-off
+> append-child t3x qx955sghm root
+> edit atpb/c0iujvas.xml
+> append "3m839 gii f7ay bc5b"
+> edit 9heh
+> log-show
+> editor-list
+> save
+> delete-element qx955sghm
+> insert-before tpp78j 5ak5 dzaucxwwz
+> log-off
+> editor-list
+> dir-tree 5ngy7.txt
+> init text psy7.md with-log
+> show 5 7
+> edit atpb/c0iujvas.xml
+> editor-list
+> spell-check --all
+> append-child tlesoi8 69xt 69xt "12q"
+> xml-tree atpb/c0iujvas.xml
+> append-child t2p8i 5hb2yhd0 root "m7pa dn89gw 8d8"
+> editor-list
+> redo
+> undo
+> dir-tree 449ggc.log
+> save
+> delete-element 5hb2yhd0
+> redo
+> xml-tree v.xml
+> delete-element 69xt
+> delete-element 5ak5
+> editor-list
+> exit
+
+## STDOUT
+> > 拼写检查结果:
+（workspace 中没有可检查的已加载文件）
+
+> Initialized xml editor for atpb/c0iujvas.xml
+> > > Loaded 9heh
+> <empty>
+> > > > > Switch to work_dir\9heh
+> > <empty>
+> > <empty>
+> > > > > > > session start at 2025-12-15 20:21:37.838704500 +08:00
+2025-12-15 20:21:37 load 9heh
+2025-12-15 20:21:38 edit 9heh
+2025-12-15 20:21:39 log-on 9heh
+2025-12-15 20:21:39 log-off atpb/c0iujvas.xml
+
+> > session start at 2025-12-15 20:21:37.627292800 +08:00
+2025-12-15 20:21:37 init xml atpb/c0iujvas.xml
+2025-12-15 20:21:37 append_child tn31 uf41u3w root 
+
+> > time: 0秒
+time: 2秒
+  work_dir\atpb/c0iujvas.xml [modified] (0秒)
+* work_dir\9heh [modified] (2秒)
+
+> > > > > > > session start at 2025-12-15 20:21:37.838704500 +08:00
+2025-12-15 20:21:37 load 9heh
+2025-12-15 20:21:38 edit 9heh
+2025-12-15 20:21:39 log-on 9heh
+2025-12-15 20:21:39 log-off atpb/c0iujvas.xml
+2025-12-15 20:21:40 append "pda9p o"
+2025-12-15 20:21:40 log-on 9heh
+2025-12-15 20:21:40 editor-list
+2025-12-15 20:21:41 undo
+
+> > > > work_dir
+├── .9heh.log
+├── .app.log
+└── .c0iujvas.xml.log
+
+> > > > Switch to work_dir\atpb/c0iujvas.xml
+> > Switch to work_dir\9heh
+> session start at 2025-12-15 20:21:37.838704500 +08:00
+2025-12-15 20:21:37 load 9heh
+2025-12-15 20:21:38 edit 9heh
+2025-12-15 20:21:39 log-on 9heh
+2025-12-15 20:21:39 log-off atpb/c0iujvas.xml
+2025-12-15 20:21:40 append "pda9p o"
+2025-12-15 20:21:40 log-on 9heh
+2025-12-15 20:21:40 editor-list
+2025-12-15 20:21:41 undo
+2025-12-15 20:21:42 dir-tree .
+2025-12-15 20:21:42 log-on 9heh
+2025-12-15 20:21:42 log-off 9heh
+2025-12-15 20:21:42 edit 9heh
+
+> time: 0秒
+time: 4秒
+  work_dir\atpb/c0iujvas.xml [modified] (0秒)
+* work_dir\9heh [modified] (4秒)
+
+> > > > > time: 0秒
+time: 5秒
+  work_dir\atpb/c0iujvas.xml [modified] (0秒)
+* work_dir\9heh [modified] (5秒)
+
+> > Initialized text editor for psy7.md with log
+> 1: # log
+
+> Switch to work_dir\atpb/c0iujvas.xml
+> time: 0秒
+time: 0秒
+time: 6秒
+* work_dir\atpb/c0iujvas.xml [modified] (0秒)
+  work_dir\psy7.md (0秒)
+  work_dir\9heh [modified] (6秒)
+
+> 拼写检查结果:
+
+[work_dir\9heh]
+未发现拼写错误
+
+[work_dir\atpb/c0iujvas.xml]
+未发现拼写错误
+
+[work_dir\psy7.md]
+未发现拼写错误
+
+> > <?xml version="1.0" encoding="UTF-8"?>
+<root id="root">
+    <tn31 id="uf41u3w"></tn31>
+</root>
+> > time: 5秒
+time: 0秒
+time: 6秒
+* work_dir\atpb/c0iujvas.xml [modified] (5秒)
+  work_dir\psy7.md (0秒)
+  work_dir\9heh [modified] (6秒)
+
+> > > > > > > > > > time: 5秒
+time: 0秒
+time: 6秒
+* work_dir\atpb/c0iujvas.xml [modified] (5秒)
+  work_dir\psy7.md (0秒)
+  work_dir\9heh [modified] (6秒)
+
+> Goodbye!
+[warn] unsave change detected.
+choose one:
+  s) save and exit.
+  d) discard and exit.
+  c) cancel.
+请输入选择 (s/d/c) > > 
+
+## STDERR
+[error] Internal error: no active file.
+[error] Invalid arguments: target node has child!
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: nothing to undo
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: path does not exist: work_dir\c/v9q.cfg
+[error] Invalid arguments: current editor is not an XML file
+[error] IO error: 系统找不到指定的路径。 (os error 3)
+[error] Invalid arguments: path does not exist: work_dir\krg.xml
+[error] Invalid arguments: no such path
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: current editor is not an XML file
+[error] Unknown command: j8pd4oo2
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: xml declaration missing or malformed
+[error] Unknown command: i362p
+[error] Unknown command: pl
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not a text file
+[error] IO error: 系统找不到指定的路径。 (os error 3)
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: path does not exist: work_dir\5ngy7.txt
+[error] Invalid arguments: 目标元素不存在: 69xt
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: path does not exist: work_dir\449ggc.log
+[error] IO error: 系统找不到指定的路径。 (os error 3)
+[error] Invalid arguments: 目标元素不存在: 5hb2yhd0
+[error] Invalid arguments: no such file!
+[error] Invalid arguments: 目标元素不存在: 69xt
+[error] Invalid arguments: 目标元素不存在: 5ak5

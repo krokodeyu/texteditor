@@ -13,6 +13,10 @@ use crate::{
     router::Router, 
     workspace::Workspace,
     timer::{EditTimeTracker, SharedEditTimes},
+    spellcheck::{
+        SpellChecker, 
+        language_tools::LanguageToolChecker
+    },
 };
 
 pub struct Application {
@@ -20,6 +24,8 @@ pub struct Application {
     pub workspace: Workspace,
     pub bus: EventBus,
     pub edit_times: SharedEditTimes,
+    /// 拼写检查器（命令层只依赖接口，便于替换第三方库实现/Mock）。
+    pub spell_checker: Box<dyn SpellChecker>,
 }
 
 impl Application {
@@ -33,7 +39,7 @@ impl Application {
         let edit_times: SharedEditTimes = Arc::new(Mutex::new(HashMap::new()));
         bus.subscribe(Box::new(EditTimeTracker::new(edit_times.clone())));
 
-        let path = Path::new(".editor_workspace");
+        let path = Path::new("work_dir\\.editor_workspace");
         if path.exists() {
             if let Ok(m) = WorkspaceMemento::load(path) {
                 workspace.from_memento(m)?;
@@ -41,7 +47,13 @@ impl Application {
             }
         }
 
-        Ok(Self { router: Router::new(), workspace, bus, edit_times })
+        let checker = LanguageToolChecker {
+            endpoint: "https://api.languagetool.org/v2/check".into(),
+            language: "en-US".into(),
+            timeout_ms: 2500,
+        };
+
+        Ok(Self { router: Router::new(), workspace, bus, edit_times, spell_checker: Box::new(checker) })
     }
 
     pub fn run(&mut self) -> AppResult<()> {
@@ -54,9 +66,6 @@ impl Application {
 
             let line = line_buf.trim();
             if line.is_empty() { continue; }
-
-            // 命令执行前的活跃文件。
-            let before_file = self.workspace.active_file_path();
 
             // —— 第一步：只用 &self.router 解析，拿到 handler 和 args —— //
             let (handler, args)
@@ -71,23 +80,13 @@ impl Application {
             // —— 第二步：前一个不可变借用已结束；现在再可变借用 self 执行 —— //
             match handler(self, &args) {
                 Ok(outcome) => {
-                    // 命令执行后的活跃文件。
-                    let after_file = self.workspace.active_file_path();
                     if let Some(p) = outcome.print { println!("{p}"); }
-                    let cmd_to_log = outcome.log.unwrap_or_else(|| line.to_string());
-                    self.bus.publish(Event::Command {
-                        file: self.workspace.active_file_path(),
-                        cmd: cmd_to_log,
-                    });
-
-                    // 如果命令执行导致编辑器切换，发出信号。
-                    if before_file != after_file {
+                    if let Some(cmd) = outcome.log {
                         self.bus.publish(Event::Command {
-                            file: after_file.clone(),
-                            cmd: "".into(), // 发出空串，避免log.
+                            file: self.workspace.active_file_path(),
+                            cmd
                         });
                     }
-
                     if outcome.exit { 
                         if self.workspace.check_modified() {
                             // 询问用户是否保存
@@ -105,11 +104,6 @@ impl Application {
                 Err(e) => { self.publish_error(e); }
             }
         }
-        // 退出前补发一条命令事件，用于让计时器结算最后一段时间（例如 EOF 直接退出的情况）
-        self.bus.publish(Event::Command {
-            file: self.workspace.active_file_path(),
-            cmd: "__session_end__".into(),
-        });
         Ok(())
     }
 
@@ -230,11 +224,19 @@ mod tests {
         // Router：正常初始化
         let router = Router::new();
 
+        let checker = LanguageToolChecker {
+            endpoint: "https://api.languagetool.org/v2/check".into(),
+            language: "en-US".into(),
+            timeout_ms: 2500,
+        };
+
+
         let app = Application {
             router,
             workspace,
             bus,
             edit_times,
+            spell_checker: Box::new(checker),
         };
 
         Ok((app, shared_events, tmp))

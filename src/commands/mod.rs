@@ -26,6 +26,7 @@ mod exit;
 mod init;
 mod insert;
 mod save;
+mod spell_check;
 mod undo;
 mod redo;
 mod replace;
@@ -55,6 +56,7 @@ use exit::EXIT_COMMAND;
 use init::INIT_COMMAND;
 use insert::INSERT_COMMAND;
 use save::SAVE_COMMAND;
+use spell_check::SPELL_CHECK_COMMAND;
 use undo::UNDO_COMMAND;
 use redo::REDO_COMMAND;
 use replace::REPLACE_COMMAND;
@@ -82,6 +84,7 @@ pub static COMMANDS: &[CommandDef] = &[
     INIT_COMMAND,
     INSERT_COMMAND,
     SAVE_COMMAND,
+    SPELL_CHECK_COMMAND,
     UNDO_COMMAND,
     REDO_COMMAND,
     REPLACE_COMMAND,

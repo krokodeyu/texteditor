@@ -1,0 +1,203 @@
+# Session 0
+# Work dir: C:\Users\11460\Desktop\文件\课程\大三上——软件设计\Labs\lab1\texteditor\fuzz_runs\run_0
+# Exit code: 0
+# Sleep range: [0.0, 0.25] seconds
+
+## Commands
+> redo
+> show 2 6
+> init xml 2ja.xml
+> log-on
+> show
+> redo
+> insert-before t2k4fvgzx wbjbe3 wbjbe3
+> log-show
+> insert-before te8z w41ah6 w41ah6
+> init text 4koc.md
+> editor-list
+> log-on 4koc.md
+> edit-text w41ah6 "3j7 w0ltog ij8djr le8 jrhsp"
+> show 6 6
+> log-off 4koc.md
+> load k.xml
+> show
+> show 1 7
+> init xml ex.xml
+> log-off ex.xml
+> spell-check 4koc.md
+> aapz6 5
+> insert-before t1ovc 2ac 2ac
+> insert-before t0yzry5 e0xd2 e0xd2 ""
+> log-on
+> xml-tree
+> 9m5cv8v tkqf wza2z8c qzjsu7 x136kylj
+> init text g0t.log with-log
+> insert-before tvyq bc7 e0xd2 "py4ikj 3fgq dej u6"
+> dir-tree
+> edit-text root "k5y"
+> log-on 4koc.md
+> edit-text root "7"
+> show 6
+> append-child t8t1rt6z rxr4kjg root ""
+> log-off
+> load 4koc.md
+> log-on 4koc.md
+> save all
+> edit-text e0xd2 "tg gy2e7b 5u7 3v"
+> edit 4koc.md
+> delete-element rxr4kjg
+> log-on
+> log-show ex.xml
+> edit-id 2ac yjw
+> delete-element e0xd2
+> redo
+> save all
+> insert-before tv7vfsh5 tlwivxr tlwivxr ""
+> edit-text bc7 "qo0"
+> editor-list
+> l5w9 tj78z
+> dir-tree
+> append "87cqy bgwq"
+> load 4711js5f.xml
+> show 4 6
+> init text la6t.txt with-log
+> e
+> log-on
+> append-child t30noe4l8 9c8xro bc7
+> init text 9ypios
+> delete-element yjw
+> dir-tree kmgnc/f.rs
+> vmtdtz xnuea3l
+> append-child tbf08g 1j8umo8av tlwivxr "u1j3 98lyv 9by1or"
+> log-show
+> append-child txnknb k65 bc7
+> edit-text root "60b2 9"
+> editor-list
+> append-child t6k7qo7g9 ywh root
+> editor-list
+> save
+> exit
+
+## STDOUT
+> > > Initialized xml editor for 2ja.xml
+> > > > > session start at 2025-12-15 20:21:27.489737100 +08:00
+2025-12-15 20:21:27 init xml 2ja.xml
+2025-12-15 20:21:27 log-on 2ja.xml
+
+> > Initialized text editor for 4koc.md
+> time: 0秒
+* work_dir\4koc.md
+  work_dir\2ja.xml [modified] (0秒)
+
+> > > <empty>
+> > > <empty>
+> <empty>
+> Initialized xml editor for ex.xml
+> > > > > > > > > Initialized text editor for g0t.log with log
+> > work_dir
+├── .2ja.xml.log
+├── .4koc.md.log
+├── .app.log
+├── .ex.xml.log
+└── .g0t.log.log
+
+> > > > 1: # log
+
+> > > Loaded 4koc.md
+> > > > Switch to work_dir\4koc.md
+> > > session start at 2025-12-15 20:21:29.537117500 +08:00
+2025-12-15 20:21:29 init xml ex.xml
+2025-12-15 20:21:29 log-off ex.xml
+2025-12-15 20:21:30 log-on ex.xml
+
+> > > > > > > time: 1秒
+time: 2秒
+time: 0秒
+time: 1秒
+  work_dir\g0t.log (1秒)
+* work_dir\4koc.md (2秒)
+  work_dir\2ja.xml [modified] (0秒)
+  work_dir\ex.xml [modified] (1秒)
+
+> > work_dir
+├── .2ja.xml.log
+├── .4koc.md.log
+├── .app.log
+├── .ex.xml.log
+└── .g0t.log.log
+
+> > > 1: 87cqy bgwq
+
+> Initialized text editor for la6t.txt with log
+> > > > Initialized text editor for 9ypios
+> > > > > session start at 2025-12-15 20:21:35.686982100 +08:00
+2025-12-15 20:21:35 init text 9ypios
+
+> > > time: 1秒
+time: 3秒
+time: 0秒
+time: 0秒
+time: 1秒
+  work_dir\g0t.log (1秒)
+  work_dir\4koc.md [modified] (3秒)
+  work_dir\la6t.txt (0秒)
+  work_dir\2ja.xml [modified] (0秒)
+* work_dir\9ypios
+  work_dir\ex.xml [modified] (1秒)
+
+> > time: 1秒
+time: 3秒
+time: 0秒
+time: 0秒
+time: 0秒
+time: 1秒
+  work_dir\g0t.log (1秒)
+  work_dir\4koc.md [modified] (3秒)
+  work_dir\la6t.txt (0秒)
+  work_dir\2ja.xml [modified] (0秒)
+* work_dir\9ypios (0秒)
+  work_dir\ex.xml [modified] (1秒)
+
+> > Goodbye!
+[info] workspace saved to "work_dir\\.editor_workspace"
+
+
+## STDERR
+[error] Internal error: no active file.
+[error] Internal error: no active file
+[error] Invalid arguments: not a text editor
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: 目标元素不存在: wbjbe3
+[error] Invalid arguments: 目标元素不存在: w41ah6
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: xml declaration missing or malformed
+[error] Invalid arguments: no such file!
+[error] Unknown command: aapz6
+[error] Invalid arguments: 目标元素不存在: 2ac
+[error] Invalid arguments: 目标元素不存在: e0xd2
+[error] Invalid arguments: usage: xml-tree <file>
+[error] Unknown command: 9m5cv8v
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: no such path
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: nothing to redo
+[error] Invalid arguments: no such path
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Unknown command: l5w9
+[error] Invalid arguments: xml declaration missing or malformed
+[error] Unknown command: e
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: path does not exist: work_dir\kmgnc/f.rs
+[error] Unknown command: vmtdtz
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file
+[error] Invalid arguments: current editor is not an XML file

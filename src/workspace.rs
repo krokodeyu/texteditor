@@ -20,6 +20,14 @@ use crate::{
     xml_editor::XmlEditor,
 };
 
+/// Workspace 可识别的文件类型（命令层用于分流处理）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WorkspaceFileKind {
+    Text,
+    Xml,
+    _Other(String),
+}
+
 #[derive(Default)]
 pub struct Workspace {
     editors: HashMap<PathBuf, EditorInstance>,
@@ -77,11 +85,13 @@ impl Workspace {
             return Err(AppError::InvalidArgs("file already exists!".into()));
         }
 
-        //let mut ed: TextEditor = TextEditor::default();
-        //if i_logging {
-        //    ed.set_logging(true);
-        //    ed.append_line("# log");
-        //}
+        match std::fs::metadata(path) {
+            Ok(_) => {
+                return Err(AppError::InvalidArgs("file already exists on disk!".into()));
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {} // ok
+            Err(e) => return Err(AppError::Io(e)),
+        }
         
         let instance = match kind {
             EditorKind::Text => {
@@ -193,6 +203,97 @@ impl Workspace {
         ed.show_all()
     }
 
+    // ===== spell-check 支持：文件枚举/读取/类型判定 =====
+
+    /// 列出当前 workspace 已打开（已加载进 editors）的文件路径。
+    /// 返回按字典序排序的路径，便于稳定输出与测试。
+    pub fn list_open_files(&self) -> AppResult<Vec<PathBuf>> {
+        let mut files: Vec<PathBuf> = self.editors.keys().cloned().collect();
+        files.sort();
+        Ok(files)
+    }
+
+    /// 判断某个已打开文件的类型。
+    ///
+    /// 说明：这里以 editors 内存中的 editor 类型为准，而不是仅凭后缀名推断。
+    pub fn file_kind(&self, p: impl AsRef<Path>) -> AppResult<WorkspaceFileKind> {
+        let key: PathBuf = p.as_ref().to_path_buf();
+        let ed = self.editors
+            .get(&key)
+            .ok_or_else(|| AppError::InvalidArgs("no such file!".into()))?;
+
+        Ok(match ed {
+            EditorInstance::Text(_) => WorkspaceFileKind::Text,
+            EditorInstance::Xml(_) => WorkspaceFileKind::Xml,
+        })
+    }
+
+    /// 读取某个已打开文本文件的全文（基于 editor 当前内存状态，而非磁盘）。
+    /// - 空文件返回空字符串
+    /// - 若目标不是文本文件则返回错误
+    pub fn read_text_all(&self, p: impl AsRef<Path>) -> AppResult<String> {
+        let key: PathBuf = p.as_ref().to_path_buf();
+        let ed = self.editors
+            .get(&key)
+            .ok_or_else(|| AppError::InvalidArgs("no such file!".into()))?
+            .as_text()?;
+
+        let n = ed.count_lines();
+        if n == 0 {
+            return Ok(String::new());
+        }
+        Ok(ed.show(1, n))
+    }
+
+    /// 提取 XML 文件“元素文本内容”，用于拼写检查（不包含标签名、属性名、属性值）。
+    ///
+    /// 返回 (label, text)：
+    /// - label 形如 "title1"、"author2"（同名标签递增编号）
+    /// - text 为该元素的“直接文本子节点”拼接结果（trim 后非空）
+    ///
+    /// 依赖：`roxmltree`
+    pub fn extract_xml_element_texts(
+        &self,
+        p: impl AsRef<Path>,
+    ) -> AppResult<Vec<(String, String)>> {
+        let key: PathBuf = p.as_ref().to_path_buf();
+        let ed = self.editors
+            .get(&key)
+            .ok_or_else(|| AppError::InvalidArgs("no such file!".into()))?
+            .as_xml()?;
+
+        let xml_text = ed.show_all()?;
+        let doc = roxmltree::Document::parse(&xml_text)
+            .map_err(|e| AppError::InvalidArgs(format!("xml parse failed: {e}")))?;
+
+        let mut out: Vec<(String, String)> = Vec::new();
+
+        for node in doc.descendants().filter(|n| n.is_element()) {
+            // Lab2: 每个元素必须有唯一 id
+            let id = node.attribute("id")
+                .ok_or_else(|| AppError::InvalidArgs("missing id attribute".into()))?
+                .to_string();
+
+            // 只取直接文本子节点（避免把子元素文本算到父元素）
+            let mut buf = String::new();
+            for child in node.children().filter(|c| c.is_text()) {
+                if let Some(t) = child.text() {
+                    let t = t.trim();
+                    if t.is_empty() { continue; }
+                    if !buf.is_empty() { buf.push(' '); }
+                    buf.push_str(t);
+                }
+            }
+
+            if !buf.is_empty() {
+                out.push((id, buf));
+            }
+        }
+
+        Ok(out)
+    }
+
+
     pub fn editor_list(
         &self,
         times: Option<&std::collections::HashMap<PathBuf, Duration>>,
@@ -205,10 +306,6 @@ impl Workspace {
             let line = Self::write_editor(path, is_active, modified, dur);
             let _ = writeln!(&mut editor_list, "{}", line);
         }
-        if editor_list.is_empty() {
-            let _ = writeln!(&mut editor_list, "(empty)");
-        }
-
         Ok(editor_list)
     }
 
@@ -441,24 +538,29 @@ impl Workspace {
 
     fn format_duration_cn(dur: &std::time::Duration) -> String {
         let secs = dur.as_secs();
-        let h = secs / 3600;
-        let m = (secs % 3600) / 60;
-        let s = secs % 60;
 
-        let mut s_out = String::new();
-
-        if h > 0 {
-            let _ = write!(s_out, "{}h", h);
-        }
-        if m > 0 {
-            let _ = write!(s_out, "{}m", m);
-        }
-        // 如果有小时/分钟就只在 s>0 时加秒；如果前面都为 0，就至少显示秒
-        if s > 0 || s_out.is_empty() {
-            let _ = write!(s_out, "{}s", s);
+        // < 1分钟：X秒
+        if secs < 60 {
+            return format!("{}秒", secs);
         }
 
-        s_out
+        // 1-59分钟：X分钟（忽略秒）
+        let mins = secs / 60;
+        if mins < 60 {
+            return format!("{}分钟", mins);
+        }
+
+        // 1-23小时：X小时Y分钟（忽略秒）
+        let hours = secs / 3600;
+        if hours < 24 {
+            let m = (secs % 3600) / 60;
+            return format!("{}小时{}分钟", hours, m);
+        }
+
+        // ≥ 24小时：X天Y小时（忽略分钟秒）
+        let days = hours / 24;
+        let h = hours % 24;
+        format!("{}天{}小时", days, h)
     }
 
     fn create_editor_for_path(path: &Path, content: &str) -> AppResult<EditorInstance> {
@@ -590,5 +692,378 @@ mod tests {
 
         let result = ws.log_show(&src);
         assert!(result.is_err(), "expected error when log file is missing");
+    }
+
+        use crate::error::AppError;
+    use crate::commands::xml_command::XmlCommand as XmlCmd;
+    use crate::xml_editor::{XmlEditor, DeletedNodeToken};
+    use roxmltree::Document;
+    use std::collections::HashMap;
+
+    fn write_file(p: &Path, s: &str) {
+        if let Some(parent) = p.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        fs::write(p, s).unwrap();
+    }
+
+    fn parse_xml(s: &str) -> Document<'_> {
+        Document::parse(s).expect("xml parse failed in test")
+    }
+
+    // ====== Lab2: init xml ======
+
+    #[test]
+    fn init_xml_creates_empty_root_with_id_root_and_xml_decl() {
+        let (mut ws, _tmp) = new_temp_workspace();
+        let p = ws.resolve_path(Some("config.xml"));
+
+        ws.init(EditorKind::Xml, &p, false).unwrap();
+        assert_eq!(ws.active_file_path().as_deref(), Some(p.as_path()));
+
+        ws.save_file(&p).unwrap();
+        let content = fs::read_to_string(&p).unwrap();
+
+        // XML 声明必须在首行（至少要以 <?xml 开头）
+        let first = content.lines().next().unwrap_or("");
+        assert!(first.trim_start().starts_with("<?xml"), "first line = `{first}`");
+
+        let doc = parse_xml(&content);
+        let root = doc.root_element();
+        assert_eq!(root.tag_name().name(), "root");
+        assert_eq!(root.attribute("id"), Some("root"));
+        assert_eq!(root.attribute("log"), None);
+    }
+
+    #[test]
+    fn init_xml_with_log_sets_root_log_true_attribute() {
+        let (mut ws, _tmp) = new_temp_workspace();
+        let p = ws.resolve_path(Some("config_log.xml"));
+
+        ws.init(EditorKind::Xml, &p, true).unwrap();
+        ws.save_file(&p).unwrap();
+        let content = fs::read_to_string(&p).unwrap();
+
+        let doc = parse_xml(&content);
+        let root = doc.root_element();
+        assert_eq!(root.tag_name().name(), "root");
+        assert_eq!(root.attribute("id"), Some("root"));
+        assert_eq!(root.attribute("log"), Some("true"));
+    }
+
+    // ====== Lab2: editor-list duration formatting ======
+
+    #[test]
+    fn editor_list_prints_human_duration_and_supports_days_format() {
+        let (mut ws, _tmp) = new_temp_workspace();
+        let f1 = ws.resolve_path(Some("file1.txt"));
+        let f2 = ws.resolve_path(Some("file2.xml"));
+        let f3 = ws.resolve_path(Some("file3.txt"));
+
+        ws.init(EditorKind::Text, &f1, false).unwrap();
+        ws.init(EditorKind::Xml, &f2, false).unwrap();
+        ws.init(EditorKind::Text, &f3, false).unwrap();
+        ws.edit(&f1).unwrap(); // 让 f1 成为 active
+
+        let mut times: HashMap<PathBuf, Duration> = HashMap::new();
+        times.insert(f1.clone(), Duration::from_secs(2 * 3600 + 15 * 60)); // 2小时15分钟
+        times.insert(f2.clone(), Duration::from_secs(45));                // 45秒
+        times.insert(f3.clone(), Duration::from_secs(27 * 3600));         // 1天3小时（>=24小时）
+
+        let out = ws.editor_list(Some(&times)).unwrap();
+
+        // 不依赖 HashMap 输出顺序：逐行找关键片段
+        let lines: Vec<&str> = out.lines().collect();
+
+        let l1 = lines.iter().find(|l| l.contains("file1.txt")).unwrap();
+        assert!(l1.starts_with("* "), "active mark missing: {l1}");
+        assert!(l1.contains("(2小时15分钟)"), "duration missing/wrong: {l1}");
+
+        let l2 = lines.iter().find(|l| l.contains("file2.xml")).unwrap();
+        assert!(l2.contains("(45秒)"), "duration missing/wrong: {l2}");
+
+        let l3 = lines.iter().find(|l| l.contains("file3.txt")).unwrap();
+        assert!(l3.contains("(1天3小时)"), ">=24h should be days+hours: {l3}");
+    }
+
+    // ====== Lab2: spell-check data extraction (workspace side) ======
+
+    #[test]
+    fn extract_xml_element_texts_should_use_element_id_and_only_text_nodes() {
+        let (mut ws, _tmp) = new_temp_workspace();
+        let p = ws.resolve_path(Some("spell.xml"));
+
+        // title1/author2 等按“元素 id”输出（而不是 tag 计数）
+        // 且只检查元素文本，不检查标签/属性（这里不测试算法，只测试抽取范围）
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<bookstore id="root">
+  <book id="book1" category="COOKING">
+    <title id="title1" lang="en">Itallian</title>
+    <author id="author2">Rowlling</author>
+    <meta id="meta1">
+      <inner id="inner1">OK</inner>
+    </meta>
+  </book>
+</bookstore>
+"#;
+
+        write_file(&p, xml);
+        ws.load(&p).unwrap();
+
+        let mut got = ws.extract_xml_element_texts(&p).unwrap();
+        got.sort_by(|a, b| a.0.cmp(&b.0));
+
+        // 期望：按元素 id 返回
+        // 期望：包含所有“有文本的元素”（title1/author2/inner1），不包含 meta1/book1/bookstore 这种“只有子元素”的节点
+        assert_eq!(
+            got,
+            vec![
+                ("author2".to_string(), "Rowlling".to_string()),
+                ("inner1".to_string(), "OK".to_string()),
+                ("title1".to_string(), "Itallian".to_string()),
+            ]
+        );
+    }
+
+    // ====== Lab2: XML editing commands semantics (via workspace.exec_xml) ======
+
+    struct CmdInsertBefore {
+        tag: String,
+        new_id: String,
+        target_id: String,
+        text: Option<String>,
+    }
+    impl XmlCmd for CmdInsertBefore {
+        fn execute(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            ed.insert_before(&self.tag, &self.new_id, &self.target_id, self.text.as_ref())
+        }
+        fn undo(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            let _ = ed.delete_node(&self.new_id);
+            Ok(())
+        }
+    }
+
+    struct CmdAppendChild {
+        tag: String,
+        new_id: String,
+        parent_id: String,
+        text: Option<String>,
+    }
+    impl XmlCmd for CmdAppendChild {
+        fn execute(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            ed.append_child(&self.tag, &self.new_id, &self.parent_id, self.text.as_ref())
+        }
+        fn undo(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            let _ = ed.delete_node(&self.new_id)?;
+            Ok(())
+        }
+    }
+
+    struct CmdEditId {
+        old_id: String,
+        new_id: String,
+    }
+    impl XmlCmd for CmdEditId {
+        fn execute(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            ed.change_attr_id(&self.old_id, &self.new_id)
+        }
+        fn undo(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            ed.change_attr_id(&self.new_id, &self.old_id)
+        }
+    }
+
+    struct CmdEditText {
+        id: String,
+        new_text: String,
+        old: Option<String>,
+    }
+    impl XmlCmd for CmdEditText {
+        fn execute(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            self.old = ed.change_text(&self.id, &self.new_text)?;
+            Ok(())
+        }
+        fn undo(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            match &self.old {
+                Some(t) => { let _ = ed.change_text(&self.id, t)?; }
+                None => { let _ = ed.remove_text(&self.id)?; }
+            }
+            Ok(())
+        }
+    }
+
+    struct CmdDeleteElement {
+        id: String,
+        token: Option<DeletedNodeToken>,
+    }
+    impl XmlCmd for CmdDeleteElement {
+        fn execute(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            self.token = Some(ed.delete_node(&self.id)?);
+            Ok(())
+        }
+        fn undo(&mut self, ed: &mut XmlEditor) -> AppResult<()> {
+            let token = self.token.take().ok_or_else(|| AppError::InternalError("missing token".into()))?;
+            ed.restore_node(token)
+        }
+    }
+
+    #[test]
+    fn xml_commands_happy_path_and_undo_delete() {
+        let (mut ws, _tmp) = new_temp_workspace();
+        let p = ws.resolve_path(Some("books.xml"));
+
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<bookstore id="root">
+  <book id="book1">
+    <title id="title1">First Book</title>
+  </book>
+</bookstore>
+"#;
+        write_file(&p, xml);
+        ws.load(&p).unwrap();
+
+        // insert-before: 在 book1 前插入 newBook
+        ws.exec_xml(Box::new(CmdInsertBefore{
+            tag: "book".into(),
+            new_id: "newBook".into(),
+            target_id: "book1".into(),
+            text: Some("".into()),
+        })).unwrap();
+
+        // append-child: 给 book1 追加 price4
+        ws.exec_xml(Box::new(CmdAppendChild{
+            tag: "price".into(),
+            new_id: "price4".into(),
+            parent_id: "book1".into(),
+            text: Some("29.99".into()),
+        })).unwrap();
+
+        // edit-id: book1 -> book001
+        ws.exec_xml(Box::new(CmdEditId{
+            old_id: "book1".into(),
+            new_id: "book001".into(),
+        })).unwrap();
+
+        // edit-text: title1 -> New Book Title
+        ws.exec_xml(Box::new(CmdEditText{
+            id: "title1".into(),
+            new_text: "New Book Title".into(),
+            old: None,
+        })).unwrap();
+
+        // delete-element: 删除 book001
+        ws.exec_xml(Box::new(CmdDeleteElement{
+            id: "book001".into(),
+            token: None,
+        })).unwrap();
+
+        // undo: 恢复 book001
+        ws.undo().unwrap();
+
+        // 校验最终 XML 结构（不依赖具体序列化空白）
+        let xml_now = ws.show_xml_tree(&p).unwrap(); // 这里按“存储内容”检查，要求能被 XML parser 解析
+        let doc = parse_xml(&xml_now);
+        let root = doc.root_element();
+        assert_eq!(root.tag_name().name(), "bookstore");
+
+        let books: Vec<&str> = root
+            .children()
+            .filter(|n| n.is_element() && n.tag_name().name() == "book")
+            .filter_map(|n| n.attribute("id"))
+            .collect();
+
+        // 顺序：newBook 在 book001 前
+        assert_eq!(books, vec!["newBook", "book001"]);
+
+        // book001 里要有 title1 文本与 price4 文本
+        let book001 = root
+            .children()
+            .find(|n| n.is_element() && n.attribute("id") == Some("book001"))
+            .unwrap();
+
+        let title = book001
+            .children()
+            .find(|n| n.is_element() && n.attribute("id") == Some("title1"))
+            .unwrap();
+        assert_eq!(title.text(), Some("New Book Title"));
+
+        let price = book001
+            .children()
+            .find(|n| n.is_element() && n.attribute("id") == Some("price4"))
+            .unwrap();
+        assert_eq!(price.text(), Some("29.99"));
+    }
+
+    #[test]
+    fn xml_mixed_content_rejected_append_child_when_parent_has_text() {
+        let (mut ws, _tmp) = new_temp_workspace();
+        let p = ws.resolve_path(Some("mixed.xml"));
+
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<root id="root">
+  <p id="p1">hello</p>
+</root>
+"#;
+        write_file(&p, xml);
+        ws.load(&p).unwrap();
+
+        let r = ws.exec_xml(Box::new(CmdAppendChild{
+            tag: "x".into(),
+            new_id: "x1".into(),
+            parent_id: "p1".into(),
+            text: Some("child".into()),
+        }));
+
+        // 约束：不支持混合内容（父已有文本时不能再加子元素）
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn xml_edit_text_rejected_when_element_has_children() {
+        let (mut ws, _tmp) = new_temp_workspace();
+        let p = ws.resolve_path(Some("has_children.xml"));
+
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<root id="root">
+  <book id="book1">
+    <title id="title1">T</title>
+  </book>
+</root>
+"#;
+        write_file(&p, xml);
+        ws.load(&p).unwrap();
+
+        let r = ws.exec_xml(Box::new(CmdEditText{
+            id: "book1".into(),
+            new_text: "SHOULD_FAIL".into(),
+            old: None,
+        }));
+
+        // 约束：元素有子元素时，不允许 edit-text（避免混合内容）
+        assert!(r.is_err());
+    }
+
+    #[test]
+    fn xml_tree_output_should_contain_structure_and_text() {
+        let (mut ws, _tmp) = new_temp_workspace();
+        let p = ws.resolve_path(Some("tree.xml"));
+
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<bookstore id="root">
+  <book id="book1" category="COOKING">
+    <title id="title1" lang="en">Everyday Italian</title>
+  </book>
+</bookstore>
+"#;
+        write_file(&p, xml);
+        ws.load(&p).unwrap();
+
+        let out = ws.show_xml_tree(&p).unwrap();
+
+        // 输出格式允许树形字符或缩进，但至少要展示层级、属性、文本内容
+        assert!(out.contains("bookstore") && out.contains("id=\"root\""), "missing root info: {out}");
+        assert!(out.contains("Everyday Italian"), "missing text node: {out}");
+
+        let looks_like_tree = out.contains("└──") || out.contains("├──") || out.contains("\n  ");
+        assert!(looks_like_tree, "output doesn't look like tree/indent format: {out}");
     }
 }

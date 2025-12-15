@@ -84,7 +84,11 @@ impl XmlNode {
     }
 
     pub fn set_text(&mut self, new_text: &String) {
-        self.text = Some(new_text.clone());
+        if new_text == "" {
+            self.text = None;
+        } else{
+            self.text = Some(new_text.clone());
+        }
     }
 
     pub fn remove_text(&mut self) {
@@ -221,6 +225,19 @@ impl XmlEditor {
         fs::write(p.as_ref(), text)?; 
         self.modified = false;
         Ok(())
+    }
+
+    pub fn to_string(&self) -> AppResult<String> {
+        let mut out = String::new();
+
+        // 1. XML 声明
+        out.push_str(r#"<?xml version="1.0" encoding="UTF-8"?>"#);
+        out.push('\n');
+
+        // 2. 根节点
+        self.serialize_node(self.root, 0, &mut out)?;
+
+        Ok(out)
     }
 
     pub fn is_modified(&self) -> bool {
@@ -809,19 +826,6 @@ impl XmlEditor {
             }
         }
         text
-    }
-
-    fn to_string(&self) -> AppResult<String> {
-        let mut out = String::new();
-
-        // 1. XML 声明
-        out.push_str(r#"<?xml version="1.0" encoding="UTF-8"?>"#);
-        out.push('\n');
-
-        // 2. 根节点
-        self.serialize_node(self.root, 0, &mut out)?;
-
-        Ok(out)
     }
 
     fn serialize_node(

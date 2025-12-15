@@ -1,4 +1,5 @@
 mod commands;
+mod spellcheck;
 mod application;
 mod editor_instance;
 mod error;
